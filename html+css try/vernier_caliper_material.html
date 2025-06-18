@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vernier Caliper Simulator - Material UI</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Material UI Color Palette */
+            --primary-color: #1976d2;
+            --primary-light: #42a5f5;
+            --primary-dark: #1565c0;
+            --secondary-color: #ff9800;
+            --secondary-light: #ffb74d;
+            --secondary-dark: #f57c00;
+            --surface-color: #ffffff;
+            --background-color: #f5f5f5;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --error-color: #d32f2f;
+            --success-color: #388e3c;
+            --divider-color: #e0e0e0;
+            
+            /* Elevation shadows */
+            --elevation-1: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12);
+            --elevation-2: 0 3px 1px -2px rgba(0,0,0,0.2), 0 2px 2px 0 rgba(0,0,0,0.14), 0 1px 5px 0 rgba(0,0,0,0.12);
+            --elevation-4: 0 2px 4px -1px rgba(0,0,0,0.2), 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12);
+            --elevation-8: 0 5px 5px -3px rgba(0,0,0,0.2), 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background-color: var(--surface-color);
+            box-shadow: var(--elevation-4);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--divider-color);
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        .control-group h3 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        /* Material UI Components */
+        .material-card {
+            background-color: var(--surface-color);
+            border-radius: 8px;
+            box-shadow: var(--elevation-1);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .material-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--elevation-1);
+        }
+
+        .material-button:hover {
+            background-color: var(--primary-dark);
+            box-shadow: var(--elevation-2);
+        }
+
+        .material-button.secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .material-button.secondary:hover {
+            background-color: var(--secondary-dark);
+        }
+
+        .material-button:disabled {
+            background-color: var(--divider-color);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .material-slider {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .slider-container {
+            margin-bottom: 16px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .slider-label span {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .slider-value {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background-color: var(--background-color);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .material-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .material-checkbox input[type="checkbox"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+        }
+
+        .material-checkbox span {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .material-separator {
+            height: 1px;
+            background-color: var(--divider-color);
+            margin: 16px 0;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--background-color);
+        }
+
+        .toolbar {
+            background-color: var(--surface-color);
+            box-shadow: var(--elevation-1);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toolbar-button {
+            background-color: transparent;
+            border: 1px solid var(--divider-color);
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-button:hover {
+            background-color: var(--background-color);
+            border-color: var(--primary-color);
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+        }
+
+        .canvas-card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: var(--elevation-4);
+            padding: 24px;
+            position: relative;
+        }
+
+        #caliperCanvas {
+            border: 1px solid var(--divider-color);
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            box-shadow: var(--elevation-8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 1000;
+        }
+
+        .fab:hover {
+            background-color: var(--secondary-dark);
+            box-shadow: var(--elevation-8);
+            transform: scale(1.05);
+        }
+
+        .fab .material-icons {
+            font-size: 24px;
+        }
+
+        /* Info Display */
+        .info-display {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: var(--elevation-2);
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .info-display h4 {
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .info-display p {
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .toolbar {
+                padding: 12px 16px;
+            }
+
+            .canvas-container {
+                padding: 16px;
+            }
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--surface-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--divider-color);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Snackbar */
+        .snackbar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--text-primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: var(--elevation-4);
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .snackbar.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h3>Loading Vernier Caliper Simulator...</h3>
+            <p id="loadingProgress">0%</p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Vernier Caliper</h1>
+                <p>Interactive Measurement Simulator</p>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Device Settings -->
+                <div class="control-group">
+                    <h3>Device Settings</h3>
+                    <div class="material-card">
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Main Scale Divisions</span>
+                                <span class="slider-value" id="msdValue">50</span>
+                            </div>
+                            <input type="range" id="msdSlider" class="material-slider" min="20" max="100" value="50" step="10">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Vernier Scale Divisions</span>
+                                <span class="slider-value" id="vsdValue">10</span>
+                            </div>
+                            <input type="range" id="vsdSlider" class="material-slider" min="5" max="25" value="10" step="5">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Zero Error</span>
+                                <span class="slider-value" id="zeroErrorValue">0</span>
+                            </div>
+                            <input type="range" id="zeroErrorSlider" class="material-slider" min="-9" max="9" value="0" step="1">
+                        </div>
+                        
+                        <div class="material-separator"></div>
+                        
+                        <div class="material-checkbox">
+                            <input type="checkbox" id="virtualDivisions">
+                            <span>Show Virtual Divisions</span>
+                        </div>
+                        
+                        <div class="material-checkbox">
+                            <input type="checkbox" id="displayValues">
+                            <span>Display Values</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Problem Settings -->
+                <div class="control-group">
+                    <h3>Problem Settings</h3>
+                    <div class="material-card">
+                        <div class="material-checkbox">
+                            <input type="checkbox" id="randomZeroError">
+                            <span>Randomize Zero Error</span>
+                        </div>
+                        
+                        <div class="material-checkbox">
+                            <input type="checkbox" id="randomMSD">
+                            <span>Randomize MSD Count</span>
+                        </div>
+                        
+                        <div class="material-checkbox">
+                            <input type="checkbox" id="randomVSD">
+                            <span>Randomize VSD Count</span>
+                        </div>
+                        
+                        <div class="material-checkbox">
+                            <input type="checkbox" id="randomObject">
+                            <span>Randomize Object Size</span>
+                        </div>
+                        
+                        <button id="createProblemBtn" class="material-button secondary" style="width: 100%; margin-top: 16px;">
+                            <span class="material-icons" style="font-size: 18px; margin-right: 8px;">add</span>
+                            Create Problem
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="control-group">
+                    <h3>Controls</h3>
+                    <div class="material-card">
+                        <button id="resetRotationBtn" class="material-button" style="width: 100%; margin-bottom: 12px;">
+                            <span class="material-icons" style="font-size: 18px; margin-right: 8px;">refresh</span>
+                            Reset Rotation
+                        </button>
+                        
+                        <button id="helpBtn" class="material-button" style="width: 100%;">
+                            <span class="material-icons" style="font-size: 18px; margin-right: 8px;">help</span>
+                            Help & Instructions
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button id="menuBtn" class="toolbar-button">
+                        <span class="material-icons">menu</span>
+                    </button>
+                    <h2>Vernier Caliper Simulator</h2>
+                </div>
+                
+                <div class="toolbar-right">
+                    <button id="zoomInBtn" class="toolbar-button" title="Zoom In">
+                        <span class="material-icons">zoom_in</span>
+                    </button>
+                    <button id="zoomOutBtn" class="toolbar-button" title="Zoom Out">
+                        <span class="material-icons">zoom_out</span>
+                    </button>
+                    <button id="resetViewBtn" class="toolbar-button" title="Reset View">
+                        <span class="material-icons">center_focus_strong</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <div class="canvas-card">
+                    <canvas id="myCanvas" style="border: 1px solid #c3c3c3;">
+                        Your browser does not support the HTML5 canvas tag.
+                    </canvas>
+                    <div id="gui" style="position: absolute"></div>
+                    <a class="trigger_popup_fricc">&#8505;</a>
+                    <div id="overlay">
+                        <div class="hover_bkgr_fricc">
+                            <span class="helper"></span>
+                            <div>
+                                <div class="popupCloseButton">&times;</div>
+                                <h3>Vernier Simulation</h3>
+                                <p> Customise main scale divisions, vernier scale divisions and zero error using the sliders at the top right panel.<br/>
+                                    Create problem by clicking create problem button, and drag the created object near the <i>internal jaws</i>, <i>external jaws</i> or <i> depth blade</i> to snap, now move vernier to read its width.
+                                <h4>Controls</h4>
+                                Pinch or use keys Page Up/down to zoom.<br>
+                                Use mouse wheel, arrow keys or drag thimble to rotate vernier.<br>
+                                Click and drag around the dashed circle to rotate the entire caliper.<br>
+                                Use Q/E keys for fine rotation control, R key to reset rotation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="fab" title="Quick Actions">
+        <span class="material-icons">more_vert</span>
+    </button>
+
+    <!-- Snackbar -->
+    <div class="snackbar" id="snackbar"></div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="loading-screen" style="display: none;">
+        <div class="material-card" style="max-width: 600px; margin: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>Help & Instructions</h2>
+                <button id="closeHelpBtn" class="toolbar-button">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            
+            <div style="max-height: 400px; overflow-y: auto;">
+                <h3>How to Use</h3>
+                <p>Customize main scale divisions, vernier scale divisions, and zero error using the sliders in the sidebar.</p>
+                
+                <h3>Creating Problems</h3>
+                <p>Click "Create Problem" to generate a random measurement scenario. Drag the created object near the internal jaws, external jaws, or depth blade to snap it into position.</p>
+                
+                <h3>Controls</h3>
+                <ul style="margin-left: 20px; margin-top: 8px;">
+                    <li><strong>Mouse Wheel:</strong> Rotate vernier scale</li>
+                    <li><strong>Arrow Keys:</strong> Fine vernier control</li>
+                    <li><strong>Drag:</strong> Move vernier or rotate entire caliper</li>
+                    <li><strong>Q/E Keys:</strong> Fine rotation control</li>
+                    <li><strong>R Key:</strong> Reset rotation</li>
+                    <li><strong>Page Up/Down:</strong> Zoom in/out</li>
+                </ul>
+                
+                <h3>Measurement</h3>
+                <p>Position the object and read the measurement from the main scale and vernier scale. The total reading is calculated automatically.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="hammer.js"></script>
+    <script src="tweakpane3.js"></script>
+    <script type='text/javascript'>
+// ... (insert the entire JS logic from vernier_calliper.html here) ...
+    </script>
+</body>
+</html> 
