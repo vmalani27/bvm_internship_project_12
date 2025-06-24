@@ -1,0 +1,66 @@
+# Flutter/Dart
+**/build/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/ephemeral/
+**/android/.gradle/
+**/android/app/build/
+**/android/.idea/
+**/android/local.properties
+**/android/.DS_Store
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/ephemeral/
+**/linux/flutter/
+**/linux/CMakeFiles/
+**/linux/build/
+**/windows/flutter/
+**/windows/CMakeFiles/
+**/windows/build/
+**/web/.dart_tool/
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Archives
+*.zip
+*.rar
+*.tar.gz
+*.tar
+*.7z
+
+# Excel/temporary files
+~$*.xlsx
+
+# Misc
+*.log 

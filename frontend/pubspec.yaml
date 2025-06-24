@@ -1,5 +1,5 @@
-name: frontend
-description: "A new Flutter project."
+name: bvm_manual_inspection_station
+description: "Frontend-only Material UI app for BVM Manual Inspection Station."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -35,7 +35,15 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   model_viewer_plus: ^1.9.3
-
+  shared_preferences: ^2.2.2
+  video_player: ^2.10.0
+  chewie: ^1.9.0
+  http: ^1.4.0
+  webview_flutter: ^4.7.0
+  media_kit: ^1.1.7
+  media_kit_video: ^1.1.7
+  media_kit_libs_windows_video: ^1.0.4
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

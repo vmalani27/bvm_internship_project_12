@@ -1,10 +1,10 @@
-# frontend
+# BVM Manual Inspection Station
 
-A new Flutter project.
+A frontend-only Material UI Flutter app for manual inspection workflows at BVM.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+This project provides a modern Material UI shell for frontend development. Add your own widgets and content as needed.
 
 A few resources to get you started if this is your first Flutter project:
 
