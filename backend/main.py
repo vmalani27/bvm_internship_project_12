@@ -1,14 +1,23 @@
 import logging
-from fastapi import FastAPI, Request, HTTPException, Response
+from fastapi import FastAPI, Request, HTTPException, Response, Body
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from csv_helper import read_csv, write_csv, append_csv, csv_to_dict
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+current_dir= os.path.dirname(os.path.abspath(__file__))
+print(f"Current directory: {current_dir}")
+
+CSV_FILES = {
+    "housing": os.path.abspath(os.path.join(current_dir, "logs", "housing.csv")),
+}
+
+
 
 # Allow CORS for local development (adjust origins as needed)
 app.add_middleware(

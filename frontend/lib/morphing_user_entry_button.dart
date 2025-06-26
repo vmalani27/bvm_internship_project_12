@@ -48,8 +48,7 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
 
   void _submitForm() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Logging: Step 1 form submitted
-      // ignore: avoid_print
+      
     
       widget.onComplete();
       _closeForm();
