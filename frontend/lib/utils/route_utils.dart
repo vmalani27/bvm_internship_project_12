@@ -5,7 +5,7 @@ import '../pages/next_page.dart';
 Route createSlideUpRoute() {
   return PageRouteBuilder(
     transitionDuration: const Duration(milliseconds: 500),
-    pageBuilder: (context, animation, secondaryAnimation) => const NextPage(),
+    pageBuilder: (context, animation, secondaryAnimation) => const WelcomePage(),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final begin = const Offset(0.0, 1.0);
       final end = Offset.zero;

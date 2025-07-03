@@ -45,6 +45,7 @@ dependencies:
   media_kit_libs_windows_video: ^1.0.4
   csv: ^5.0.2
   path: ^1.8.3
+  google_fonts: ^6.2.1
   
 dev_dependencies:
   flutter_test:

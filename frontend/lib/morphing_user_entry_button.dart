@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MorphingUserEntryButton extends StatefulWidget {
   final bool enabled;
@@ -22,8 +24,8 @@ class MorphingUserEntryButton extends StatefulWidget {
 class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   bool _expanded = false;
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _rollNumberController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
   bool _showSubmit = false;
 
   void _openForm() {
@@ -46,33 +48,61 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
     });
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
-      
-    
-      widget.onComplete();
-      _closeForm();
+      final now = DateTime.now();
+      final date = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      final time = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+      final entry = {
+        "roll_number": _rollNumberController.text.trim(),
+        "name": _nameController.text.trim(),
+        "date": date,
+        "time": time,
+        "last_login": ""
+      };
+
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:8000/user_entry'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(entry),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> resp = jsonDecode(response.body);
+        if (resp['status'] == 'welcome_back') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Welcome back!')),
+          );
+        }
+        widget.onComplete();
+        _closeForm();
+      } else {
+        // Handle error (show dialog/snackbar)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit: \\${response.body}')),
+        );
+      }
     }
   }
 
   void _updateShowSubmit() {
     setState(() {
       _showSubmit =
-          _nameController.text.trim().isNotEmpty && _emailController.text.trim().isNotEmpty;
+          _rollNumberController.text.trim().isNotEmpty && _nameController.text.trim().isNotEmpty;
     });
   }
 
   @override
   void initState() {
     super.initState();
+    _rollNumberController.addListener(_updateShowSubmit);
     _nameController.addListener(_updateShowSubmit);
-    _emailController.addListener(_updateShowSubmit);
   }
 
   @override
   void dispose() {
+    _rollNumberController.dispose();
     _nameController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -112,6 +142,27 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       TextFormField(
+                        controller: _rollNumberController,
+                        style: TextStyle(color: widget.buttonFg, fontSize: 15),
+                        decoration: InputDecoration(
+                          labelText: 'Roll Number',
+                          labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          filled: true,
+                          fillColor: widget.buttonBg.withOpacity(0.95),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
+                          ),
+                        ),
+                        validator: (value) => value == null || value.isEmpty ? 'Enter your roll number' : null,
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
                         controller: _nameController,
                         style: TextStyle(color: widget.buttonFg, fontSize: 15),
                         decoration: InputDecoration(
@@ -130,27 +181,6 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                           ),
                         ),
                         validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _emailController,
-                        style: TextStyle(color: widget.buttonFg, fontSize: 15),
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          filled: true,
-                          fillColor: widget.buttonBg.withOpacity(0.95),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
-                          ),
-                        ),
-                        validator: (value) => value == null || value.isEmpty ? 'Enter your email' : null,
                       ),
                       const SizedBox(height: 14),
                       Row(
@@ -210,4 +240,4 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
             ),
     );
   }
-} 
+}

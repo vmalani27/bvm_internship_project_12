@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from csv_helper import read_csv, write_csv, append_csv, csv_to_dict
+import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -14,10 +15,21 @@ current_dir= os.path.dirname(os.path.abspath(__file__))
 print(f"Current directory: {current_dir}")
 
 CSV_FILES = {
-    "housing": os.path.abspath(os.path.join(current_dir, "logs", "housing.csv")),
+    "user_entry": {
+        "path": os.path.abspath(os.path.join(current_dir, "logs", "user_entry.csv")),
+        "fields": ["roll_number", "name", "date", "time"],
+        "permission": "crud"
+    }
 }
 
+print(f"CSV file path: {CSV_FILES['user_entry']}")
 
+# df=read_csv(CSV_FILES["user_entry"]["path"])
+# if not df:
+#     logger.info("CSV file is empty or does not exist.")
+# else:
+#     logger.info(f"CSV file loaded successfully with {len(df)} records.")
+# input()
 
 # Allow CORS for local development (adjust origins as needed)
 app.add_middleware(
@@ -142,6 +154,186 @@ async def stream_video(request: Request, category: str, filename: str):
             range_streamer(file_path, 0, file_size - 1),
             headers=headers,
         )
+
+from fastapi import HTTPException
+
+def check_permission(file_key, action):
+    perms = CSV_FILES[file_key]["permission"]
+    if action == "create" and "c" not in perms:
+        raise HTTPException(status_code=403, detail="Create not allowed")
+    if action == "read" and "r" not in perms:
+        raise HTTPException(status_code=403, detail="Read not allowed")
+    if action == "update" and "u" not in perms:
+        raise HTTPException(status_code=403, detail="Update not allowed")
+    if action == "delete" and "d" not in perms:
+        raise HTTPException(status_code=403, detail="Delete not allowed")
+
+USER_ENTRY_FIELDS = ["roll_number", "name", "date", "time", "last_login"]
+
+@app.get("/user_entry")
+def get_user_entries():
+    ensure_user_entry_csv_exists()
+    data = read_csv(get_user_entry_path())
+    if not data:
+        return {"status": "no records found", "data": []}
+    return {"status": "success", "data": data}
+
+@app.post("/user_entry")
+def add_user_entry(entry: dict = Body(...)):
+    ensure_user_entry_csv_exists()
+    for field in ["roll_number", "name"]:
+        if field not in entry:
+            raise HTTPException(status_code=400, detail=f"Missing field: {field}")
+    # Check for duplicate roll_number
+    existing_entries = read_csv(get_user_entry_path())
+    for row in existing_entries:
+        if row["roll_number"] == entry["roll_number"]:
+            # Update last_login for returning user
+            row["last_login"] = datetime.datetime.now().isoformat()
+            write_csv(get_user_entry_path(), existing_entries, USER_ENTRY_FIELDS)
+            return {"status": "welcome_back"}
+    # New user: add entry
+    now = datetime.datetime.now().isoformat()
+    new_entry = {
+        "roll_number": entry["roll_number"],
+        "name": entry["name"],
+        "date": entry.get("date", now[:10]),
+        "time": entry.get("time", now[11:19]),
+        "last_login": now
+    }
+    append_csv(get_user_entry_path(), [new_entry], USER_ENTRY_FIELDS)
+    return {"status": "entry added"}
+
+@app.put("/user_entry")
+def update_user_entry(entry: dict = Body(...)):
+    """
+    Update a user entry by roll_number. Expects a JSON body with roll_number and any fields to update.
+    """
+    ensure_user_entry_csv_exists()
+    if "roll_number" not in entry:
+        raise HTTPException(status_code=400, detail="Missing field: roll_number")
+
+    entries = read_csv(get_user_entry_path())
+    updated = False
+    for row in entries:
+        if row["roll_number"] == entry["roll_number"]:
+            for field in USER_ENTRY_FIELDS:
+                if field in entry and field != "roll_number":
+                    row[field] = entry[field]
+            updated = True
+            break
+
+    if not updated:
+        raise HTTPException(status_code=404, detail="Entry with given roll_number not found")
+
+    write_csv(get_user_entry_path(), entries, USER_ENTRY_FIELDS)
+    return {"status": "entry updated"}
+
+@app.delete("/user_entry")
+def delete_user_entries():
+    path = get_user_entry_path()
+    if os.path.exists(path):
+        os.remove(path)
+    return {"status": "user_entry CSV deleted"}
+
+def get_user_entry_path():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    logs_dir = os.path.join(current_dir, "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    return os.path.join(logs_dir, "user_entry.csv")
+
+def ensure_user_entry_csv_exists():
+    path = get_user_entry_path()
+    if not os.path.exists(path):
+        from csv_helper import write_csv
+        write_csv(path, [], ["roll_number", "name", "date", "time"])
+
+# Shaft measurement fields and CSV path
+SHAFT_MEASUREMENT_FIELDS = ["part_number", "roll_number", "shaft_height", "shaft_radius"]
+
+def get_measured_shafts_path():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    logs_dir = os.path.join(current_dir, "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    return os.path.join(logs_dir, "measured_shafts.csv")
+
+
+def clear_user_entry_csv():
+    path = get_user_entry_path()
+    if os.path.exists(path):
+        os.remove(path)
+    return {"status": "user_entry CSV deleted"}
+
+
+def clear_measured_shafts_csv():
+    path = get_measured_shafts_path()
+    if os.path.exists(path):
+        os.remove(path)
+    return {"status": "measured_shafts CSV deleted"}
+
+
+def ensure_measured_shafts_csv_exists():
+    path = get_measured_shafts_path()
+    if not os.path.exists(path):
+        from csv_helper import write_csv
+        write_csv(path, [], SHAFT_MEASUREMENT_FIELDS)
+
+@app.post("/shaft_measurement")
+def add_shaft_measurement(entry: dict = Body(...)):
+    """
+    Add a new shaft measurement. Expects a JSON body with part_number, roll_number, shaft_height, shaft_radius.
+    """
+    ensure_measured_shafts_csv_exists()
+    for field in SHAFT_MEASUREMENT_FIELDS:
+        if field not in entry:
+            raise HTTPException(status_code=400, detail=f"Missing field: {field}")
+    from csv_helper import append_csv
+    append_csv(get_measured_shafts_path(), [entry], SHAFT_MEASUREMENT_FIELDS)
+    return {"status": "shaft measurement added"}
+
+@app.get("/shaft_measurement")
+def get_shaft_measurements():
+    ensure_measured_shafts_csv_exists()
+    data = read_csv(get_measured_shafts_path())
+    if not data:
+        return {"status": "no records found", "data": []}
+    return {"status": "success", "data": data}
+
+@app.put("/shaft_measurement")
+def update_shaft_measurement(entry: dict = Body(...)):
+    """
+    Update a shaft measurement by part_number. Expects a JSON body with part_number and any fields to update.
+    """
+    ensure_measured_shafts_csv_exists()
+    if "part_number" not in entry:
+        raise HTTPException(status_code=400, detail="Missing field: part_number")
+
+    entries = read_csv(get_measured_shafts_path())
+    updated = False
+    for row in entries:
+        if row["part_number"] == entry["part_number"]:
+            for field in SHAFT_MEASUREMENT_FIELDS:
+                if field in entry and field != "part_number":
+                    row[field] = entry[field]
+            updated = True
+            break
+
+    if not updated:
+        raise HTTPException(status_code=404, detail="Entry with given part_number not found")
+
+    write_csv(get_measured_shafts_path(), entries, SHAFT_MEASUREMENT_FIELDS)
+    return {"status": "shaft measurement updated"}
+
+@app.delete("/shaft_measurement")
+def delete_shaft_measurements():
+    path = get_measured_shafts_path()
+    if os.path.exists(path):
+        os.remove(path)
+    return {"status": "measured_shafts CSV deleted"}
+
+@app.delete("/clear_measured_shafts")
+def clear_measured_shafts_endpoint():
+    return clear_measured_shafts_csv()
 
 if __name__ == "__main__":
     import uvicorn
