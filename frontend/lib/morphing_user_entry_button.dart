@@ -50,36 +50,42 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
 
   void _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final now = DateTime.now();
-      final date = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-      final time = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
-      final entry = {
-        "roll_number": _rollNumberController.text.trim(),
-        "name": _nameController.text.trim(),
-        "date": date,
-        "time": time,
-        "last_login": ""
-      };
+      try {
+        final now = DateTime.now();
+        final date = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+        final time = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+        final entry = {
+          "roll_number": _rollNumberController.text.trim(),
+          "name": _nameController.text.trim(),
+          "date": date,
+          "time": time,
+          "last_login": ""
+        };
 
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/user_entry'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(entry),
-      );
+        final response = await http.post(
+          Uri.parse('http://127.0.0.1:8000/user_entry'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(entry),
+        );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> resp = jsonDecode(response.body);
-        if (resp['status'] == 'welcome_back') {
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> resp = jsonDecode(response.body);
+          if (resp['status'] == 'welcome_back') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Welcome back!')),
+            );
+          }
+          widget.onComplete();
+          _closeForm();
+        } else {
+          // Handle error (show dialog/snackbar)
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Welcome back!')),
+            SnackBar(content: Text('Failed to submit: \\${response.body}')),
           );
         }
-        widget.onComplete();
-        _closeForm();
-      } else {
-        // Handle error (show dialog/snackbar)
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit: \\${response.body}')),
+          SnackBar(content: Text('Error: \\${e.toString()}')),
         );
       }
     }
@@ -109,7 +115,7 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 180),
       curve: Curves.easeInOut,
       width: _expanded ? 260 : 140,
       height: _expanded ? 190 : 56,
@@ -132,112 +138,119 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
               )
             : null,
       ),
-      child: _expanded
-          ? Padding(
-              padding: const EdgeInsets.all(14.0),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      TextFormField(
-                        controller: _rollNumberController,
-                        style: TextStyle(color: widget.buttonFg, fontSize: 15),
-                        decoration: InputDecoration(
-                          labelText: 'Roll Number',
-                          labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          filled: true,
-                          fillColor: widget.buttonBg.withOpacity(0.95),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
-                          ),
-                        ),
-                        validator: (value) => value == null || value.isEmpty ? 'Enter your roll number' : null,
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _nameController,
-                        style: TextStyle(color: widget.buttonFg, fontSize: 15),
-                        decoration: InputDecoration(
-                          labelText: 'Name',
-                          labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          filled: true,
-                          fillColor: widget.buttonBg.withOpacity(0.95),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
-                          ),
-                        ),
-                        validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: widget.buttonFg,
-                              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
+        child: _expanded
+            ? Padding(
+                key: const ValueKey('form'),
+                padding: const EdgeInsets.all(14.0),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextFormField(
+                          controller: _rollNumberController,
+                          style: TextStyle(color: widget.buttonFg, fontSize: 15),
+                          decoration: InputDecoration(
+                            labelText: 'Roll Number',
+                            labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            filled: true,
+                            fillColor: widget.buttonBg.withOpacity(0.95),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
                             ),
-                            onPressed: _closeForm,
-                            child: const Text('Cancel'),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          if (_showSubmit)
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: widget.buttonFg,
-                                foregroundColor: widget.buttonBg,
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          validator: (value) => value == null || value.isEmpty ? 'Enter your roll number' : null,
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _nameController,
+                          style: TextStyle(color: widget.buttonFg, fontSize: 15),
+                          decoration: InputDecoration(
+                            labelText: 'Name',
+                            labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            filled: true,
+                            fillColor: widget.buttonBg.withOpacity(0.95),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
+                            ),
+                          ),
+                          validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: widget.buttonFg,
+                                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                elevation: 0,
                               ),
-                              onPressed: _submitForm,
-                              child: const Text('Submit'),
+                              onPressed: _closeForm,
+                              child: const Text('Cancel'),
                             ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 8),
+                            if (_showSubmit)
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: widget.buttonFg,
+                                  foregroundColor: widget.buttonBg,
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                  textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                onPressed: _submitForm,
+                                child: const Text('Submit'),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            )
-          : Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: widget.enabled ? _openForm : null,
-                child: Center(
-                  child: Text(
-                    'User Entry',
-                    style: TextStyle(
-                      color: widget.buttonFg,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+              )
+            : Material(
+                key: const ValueKey('button'),
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: widget.enabled ? _openForm : null,
+                  child: Center(
+                    child: Text(
+                      'User Entry',
+                      style: TextStyle(
+                        color: widget.buttonFg,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }

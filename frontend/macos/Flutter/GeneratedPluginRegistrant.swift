@@ -5,6 +5,7 @@
 import FlutterMacOS
 import Foundation
 
+import hid4flutter
 import media_kit_video
 import package_info_plus
 import path_provider_foundation
@@ -16,6 +17,7 @@ import wakelock_plus
 import webview_flutter_wkwebview
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  Hid4flutterPlugin.register(with: registry.registrar(forPlugin: "Hid4flutterPlugin"))
   MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))
   PathProviderPlugin.register(with: registry.registrar(forPlugin: "PathProviderPlugin"))

@@ -1,0 +1,60 @@
+Project Progress Checklist
+=========================
+
+BACKEND (Python FastAPI)
+------------------------
+- FastAPI server setup with CORS enabled
+- CSV-based data storage for user entries and shaft measurements
+- User entry endpoints (/user_entry):
+  - Add user entry (POST)
+  - Get all user entries (GET)
+  - Update user entry (PUT)
+  - Delete all user entries (DELETE)
+  - Handles duplicate roll numbers with “welcome back” logic and updates last_login
+  - Returns clear status messages and data
+- Shaft measurement endpoints (/shaft_measurement):
+  - Add shaft measurement (POST)
+  - Get all shaft measurements (GET)
+  - Update shaft measurement (PUT)
+  - Delete all shaft measurements (DELETE)
+- CSV initialization with correct headers for both user and shaft data
+- Video streaming endpoints for instructional videos
+- Error handling for missing fields, duplicates, and file issues
+
+FRONTEND (Flutter)
+------------------
+- Global Material 3 theme with modern color scheme and Google Fonts
+- User entry form with validation and “welcome back” toast
+- Measurement workflow:
+  - Category selection (shaft/housing)
+  - Step-by-step measurement page with:
+    - Step progress indicator
+    - Instructional video for each step
+    - Info dialog with context-specific instructions
+    - Modern, accessible UI (cards, buttons, spacing)
+    - Animated transitions between steps
+    - Review and submit summary
+- No sidebar on initial screen
+- Consistent AppBar and navigation
+- Snackbar/toast feedback for user actions
+- Form always sends all required fields to backend
+- Error handling for backend responses
+
+ASSETS & DATA
+-------------
+- Instructional videos for each measurement step (height, radius, depth) for both shaft and housing
+- CSV files for user entries and shaft measurements in backend/logs
+
+OTHER IMPROVEMENTS
+------------------
+- Linter errors resolved (Flutter and Python)
+- UI/UX improvements (padding, spacing, card elevation, rounded corners)
+- Backend and frontend integration tested via Postman
+
+WHAT’S NEXT?
+------------
+- [ ] Add more measurement types or components (if needed)
+- [ ] Add user authentication (if required)
+- [ ] Add export/reporting features (CSV, PDF, etc.)
+- [ ] Add more detailed instructional content (images, diagrams)
+- [ ] Polish for production (app icon, splash screen, error pages) 

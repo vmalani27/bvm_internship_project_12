@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hid4flutter/hid4flutter.dart';
 
 class MorphingCalibrationButton extends StatefulWidget {
   final bool enabled;

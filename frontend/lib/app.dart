@@ -57,13 +57,13 @@ class BvmManualInspectionStationApp extends StatelessWidget {
           contentTextStyle: TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
-      home: const BvmManualInspectionStationPage(),
+      home: const OnboardingScreen(),
     );
   }
 }
 
-class BvmManualInspectionStationPage extends StatelessWidget {
-  const BvmManualInspectionStationPage({super.key});
+class OnboardingScreen extends StatelessWidget {
+  const OnboardingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
