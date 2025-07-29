@@ -148,94 +148,100 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+      duration: const Duration(milliseconds: 220),
       curve: Curves.easeInOut,
-      width: _expanded ? 260 : 140,
-      height: _expanded ? 190 : 56,
+      width: _expanded ? 340 : 160,
+      height: _expanded ? 270 : 60,
       decoration: BoxDecoration(
-        color: widget.buttonBg,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: _expanded
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-        border: widget.buttonBorder is RoundedRectangleBorder && !_expanded && (widget.buttonBorder as RoundedRectangleBorder).side != BorderSide.none
-            ? Border.all(
-                color: (widget.buttonBorder as RoundedRectangleBorder).side.color,
-                width: (widget.buttonBorder as RoundedRectangleBorder).side.width,
-              )
-            : null,
+        color: _expanded ? const Color(0xFFF7FAFC) : widget.buttonBg,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: _expanded ? const Color(0xFFb6c1d1) : widget.buttonFg.withOpacity(0.18),
+          width: 1.2,
+        ),
       ),
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeIn,
         switchOutCurve: Curves.easeOut,
         child: _expanded
             ? Padding(
                 key: const ValueKey('form'),
-                padding: const EdgeInsets.all(14.0),
+                padding: const EdgeInsets.all(20.0),
                 child: SingleChildScrollView(
                   child: Form(
                     key: _formKey,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        
-                        
+                        Text(
+                          'User Entry',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2d3a4a),
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 18),
                         TextFormField(
                           controller: _rollNumberController,
-                          style: TextStyle(color: widget.buttonFg, fontSize: 15),
+                          style: TextStyle(color: Color(0xFF2d3a4a), fontSize: 16),
                           decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.badge, color: Color(0xFF1976D2)),
                             labelText: 'Roll Number',
-                            labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            labelStyle: TextStyle(color: Color(0xFF1976D2)),
                             filled: true,
-                            fillColor: widget.buttonBg.withOpacity(0.95),
+                            fillColor: Colors.white.withOpacity(0.85),
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Color(0xFFb6c1d1)),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Color(0xFF1976D2), width: 2),
                             ),
                           ),
                           validator: (value) => value == null || value.isEmpty ? 'Enter your roll number' : null,
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 14),
                         TextFormField(
                           controller: _nameController,
-                          style: TextStyle(color: widget.buttonFg, fontSize: 15),
+                          style: TextStyle(color: Color(0xFF2d3a4a), fontSize: 16),
                           decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.person, color: Color(0xFF388E3C)),
                             labelText: 'Name',
-                            labelStyle: TextStyle(color: widget.buttonFg, fontSize: 14),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            labelStyle: TextStyle(color: Color(0xFF388E3C)),
                             filled: true,
-                            fillColor: widget.buttonBg.withOpacity(0.95),
+                            fillColor: Colors.white.withOpacity(0.85),
                             enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: widget.buttonFg.withOpacity(0.2)),
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Color(0xFFb6c1d1)),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: widget.buttonFg, width: 1.5),
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: Color(0xFF388E3C), width: 2),
                             ),
                           ),
                           validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 22),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: widget.buttonFg,
-                                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Color(0xFF2d3a4a),
+                                side: BorderSide(color: Color(0xFFb6c1d1)),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -243,18 +249,17 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                               onPressed: _closeForm,
                               child: const Text('Cancel'),
                             ),
-                            const SizedBox(width: 8),
                             if (_showSubmit)
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: widget.buttonFg,
-                                  foregroundColor: widget.buttonBg,
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                                  textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                                  backgroundColor: Color(0xFF1976D2),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  elevation: 0,
+                                  elevation: 2,
                                 ),
                                 onPressed: _submitForm,
                                 child: const Text('Submit'),
@@ -270,17 +275,24 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                 key: const ValueKey('button'),
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(22),
                   onTap: widget.enabled ? _openForm : null,
                   child: Center(
-                    child: Text(
-                      'User Entry',
-                      style: TextStyle(
-                        color: widget.buttonFg,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.login, color: widget.buttonFg, size: 28),
+                        const SizedBox(width: 10),
+                        Text(
+                          'User Entry',
+                          style: TextStyle(
+                            color: widget.buttonFg,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.7,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

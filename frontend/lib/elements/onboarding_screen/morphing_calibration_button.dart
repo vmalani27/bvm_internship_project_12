@@ -106,25 +106,21 @@ class _MorphingCalibrationButtonState extends State<MorphingCalibrationButton> {
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
       width: _morphed ? 260 : 140,
-      height: _morphed || _calibrationError != null ? 140 : 56, // Adjust height for error state
+      height: _morphed || _calibrationError != null ? 140 : 56,
       decoration: BoxDecoration(
         color: currentButtonBg,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: _morphed
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-        border: widget.buttonBorder is RoundedRectangleBorder && !_morphed && (widget.buttonBorder as RoundedRectangleBorder).side != BorderSide.none
-            ? Border.all(
-                color: (widget.buttonBorder as RoundedRectangleBorder).side.color,
-                width: (widget.buttonBorder as RoundedRectangleBorder).side.width,
-              )
-            : null,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: !_morphed ? currentButtonFg.withOpacity(0.18) : const Color(0xFFb6c1d1),
+          width: 1.2,
+        ),
       ),
       child: _morphed
           ? Center(

@@ -55,34 +55,137 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
         listenable: widget.model,
         builder: (context, _) {
           if (!_productIdSet) {
-            return Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text('Enter Product ID', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 24),
-                  TextFormField(
-                    controller: _productIdController,
-                    decoration: InputDecoration(
-                      labelText: 'Product ID',
-                      border: OutlineInputBorder(),
+            // Gemini/ChatGPT inspired theme colors
+            const Color blue = Color(0xFF4F8CFF);
+            const Color purple = Color(0xFF8B5CF6);
+            const Color teal = Color(0xFF2DD4BF);
+            const Color white = Colors.white;
+            const Color bgGradientStart = Color(0xFFF5F7FA);
+            const Color bgGradientEnd = Color(0xFFE8ECF7);
+            return Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 420),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [bgGradientStart, bgGradientEnd],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(36)),
+                ),
+                child: Card(
+                  elevation: 12,
+                  margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                  color: white,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 44),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [blue.withOpacity(0.18), purple.withOpacity(0.18), teal.withOpacity(0.18)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(18),
+                          child: Icon(Icons.bubble_chart_rounded, size: 54, color: purple),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'Welcome to BVM Station',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: purple,
+                            letterSpacing: 0.7,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Manual Inspection & Measurement',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: blue.withOpacity(0.85),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: teal.withOpacity(0.13),
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(Icons.qr_code_2, size: 38, color: blue),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'Enter Product ID to continue',
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w600,
+                            color: blue,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _productIdController,
+                          style: const TextStyle(fontSize: 17, color: blue),
+                          decoration: InputDecoration(
+                            labelText: 'Product ID',
+                            labelStyle: const TextStyle(color: purple, fontWeight: FontWeight.w500),
+                            prefixIcon: const Icon(Icons.confirmation_number, color: teal),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide(color: teal, width: 1.2),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              borderSide: BorderSide(color: purple, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: white,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.arrow_forward),
+                            label: const Text('Continue'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: purple,
+                              foregroundColor: white,
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              elevation: 3,
+                              shadowColor: purple.withOpacity(0.18),
+                            ),
+                            onPressed: () {
+                              if (_productIdController.text.trim().isNotEmpty) {
+                                setState(() {
+                                  widget.model.productId = _productIdController.text.trim();
+                                  _productIdSet = true;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_productIdController.text.trim().isNotEmpty) {
-                        setState(() {
-                          widget.model.productId = _productIdController.text.trim();
-                          _productIdSet = true;
-                        });
-                      }
-                    },
-                    child: Text('Continue'),
-                  ),
-                ],
+                ),
               ),
             );
           }

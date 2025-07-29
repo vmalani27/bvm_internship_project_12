@@ -7,8 +7,12 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // App color palette
+    const Color bgColor = Color(0xFFF7FAFC);
+    const Color cardBg = Color(0xFFFFFFFF);
+    const Color accent = Color(0xFF4F8CFF);
     return Scaffold(
-      backgroundColor: const Color(0xFF1A237E), // Dark indigo background
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -19,13 +23,13 @@ class WelcomePage extends StatelessWidget {
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: cardBg.withOpacity(0.96),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 25,
-                        offset: const Offset(0, 10),
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -36,7 +40,7 @@ class WelcomePage extends StatelessWidget {
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 700),
                         curve: Curves.easeInOut,
-                        child: Icon(Icons.straighten, size: 90, color: Color(0xFF0D47A1)),
+                        child: Icon(Icons.straighten, size: 90, color: accent),
                       ),
                       const SizedBox(height: 36),
                       const Text(
@@ -45,7 +49,7 @@ class WelcomePage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0D47A1),
+                          color: Color(0xFF1A237E),
                           letterSpacing: 1.3,
                         ),
                       ),
@@ -76,7 +80,7 @@ class WelcomePage extends StatelessWidget {
                         cursor: SystemMouseCursors.click,
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(
+                            constraints: const BoxConstraints(
                               minWidth: 200,
                               maxWidth: 320,
                             ),
@@ -84,14 +88,14 @@ class WelcomePage extends StatelessWidget {
                               icon: const Icon(Icons.play_circle_fill, size: 30),
                               label: const Text('Start Video Inspection', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF0D47A1),
+                                backgroundColor: accent,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
-                                elevation: 12,
-                                shadowColor: Colors.black87,
+                                elevation: 8,
+                                shadowColor: accent.withOpacity(0.25),
                                 textStyle: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,

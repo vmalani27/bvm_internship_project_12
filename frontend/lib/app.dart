@@ -68,7 +68,7 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A237E), // Dark indigo
+      backgroundColor: const Color(0xFFF7FAFC), // Simple, clean background
       appBar: AppBar(
         title: const Text('BVM Manual Inspection Station'),
       ),

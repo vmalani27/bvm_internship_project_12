@@ -40,12 +40,11 @@ class MeasurementStepModel extends ChangeNotifier {
   Future<bool> submitMeasurements() async {
     String endpoint;
     final body = Map<String, dynamic>.from(measurements);
-    // Always include roll_number and name if available from session or model
+    // Always include roll_number if available from session or model
     final roll = userRoll ?? UserSession.rollNumber;
-    final name = userName ?? UserSession.name;
     final productIdValue = productId;
     if (roll != null && roll.isNotEmpty) body['roll_number'] = roll;
-    if (name != null && name.isNotEmpty) body['name'] = name;
+    // Do NOT include 'name' in the payload for measurement submission
     if (productIdValue != null && productIdValue.isNotEmpty) body['product_id'] = productIdValue;
     if (category == 'shaft') {
       endpoint = '/shaft_measurement';

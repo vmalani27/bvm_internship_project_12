@@ -182,28 +182,22 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
-      // Adjust width/height based on state
       width: _morphed ? 260 : 140,
-      height: _morphed ? 140 : 56, // Keep height consistent when not morphed
+      height: _morphed ? 140 : 56,
       decoration: BoxDecoration(
-        color: currentButtonBg, // Use currentButtonBg
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: _morphed
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-        // Apply the border only when not morphed and if the border is provided
-        border: widget.buttonBorder is RoundedRectangleBorder && !_morphed && (widget.buttonBorder as RoundedRectangleBorder).side != BorderSide.none
-            ? Border.all(
-                color: (widget.buttonBorder as RoundedRectangleBorder).side.color,
-                width: (widget.buttonBorder as RoundedRectangleBorder).side.width,
-              )
-            : null,
+        color: currentButtonBg,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: !_morphed ? currentButtonFg.withOpacity(0.18) : const Color(0xFFb6c1d1),
+          width: 1.2,
+        ),
       ),
       child: Stack( // Use Stack to overlay the hidden TextField
         children: [

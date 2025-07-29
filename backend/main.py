@@ -44,7 +44,7 @@ app.add_middleware(
 
 # Get the current directory and construct paths
 current_dir = os.path.dirname(os.path.abspath(__file__))
-assets_dir = os.path.abspath(os.path.join(current_dir, "..", "assets"))
+assets_dir = os.path.abspath(os.path.join(current_dir, "assets"))
 
 VIDEO_DIRS = {
     "housing": os.path.abspath(os.path.join(assets_dir, "housing")),
