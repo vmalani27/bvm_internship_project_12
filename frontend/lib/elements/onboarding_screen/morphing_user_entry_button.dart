@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bvm_manual_inspection_station/elements/custom_flushbar.dart';
+import 'package:bvm_manual_inspection_station/user_session.dart';
 import 'dart:convert';
 
 class MorphingUserEntryButton extends StatefulWidget {
@@ -96,6 +97,9 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
           if (resp.containsKey('should_calibrate') && widget.onShouldCalibrateChanged != null) {
             widget.onShouldCalibrateChanged!(resp['should_calibrate'] as bool);
           }
+          // Set global user session values
+          UserSession.rollNumber = _rollNumberController.text.trim();
+          UserSession.name = _nameController.text.trim();
           widget.onComplete();
           _closeForm();
         } 

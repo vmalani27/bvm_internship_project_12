@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
-import '../video_player_page.dart';
+import 'video_player_page.dart';
 import '../config/app_config.dart';
 
 // VideoListPage: Fetch and show list of videos for the selected category

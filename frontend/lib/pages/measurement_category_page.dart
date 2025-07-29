@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'measurement_step_page.dart';
+import 'measurement_step_model.dart';
 
 // MeasurementCategoryPage: Ask user to select Shaft or Housing for manual measurement
 class MeasurementCategoryPage extends StatelessWidget {
@@ -20,7 +21,10 @@ class MeasurementCategoryPage extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => MeasurementStepPage(category: 'housing'),
+                    builder: (context) => MeasurementStepPage(
+                      category: 'housing',
+                      model: MeasurementStepModel(category: 'housing'),
+                    ),
                   ),
                 );
               },
@@ -37,7 +41,10 @@ class MeasurementCategoryPage extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => MeasurementStepPage(category: 'shaft'),
+                    builder: (context) => MeasurementStepPage(
+                      category: 'shaft',
+                      model: MeasurementStepModel(category: 'shaft'),
+                    ),
                   ),
                 );
               },

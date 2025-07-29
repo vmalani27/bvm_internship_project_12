@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'measurement_step_model.dart';
+import 'media_kit_video_player.dart';
+import 'submission_result_page.dart';
+import 'dart:developer' as developer;
 
 class MeasurementStepPage extends StatefulWidget {
   final String category;
-  const MeasurementStepPage({required this.category, super.key});
+  final MeasurementStepModel model;
+
+  const MeasurementStepPage({
+    super.key,
+    required this.category,
+    required this.model,
+  });
 
   @override
   State<MeasurementStepPage> createState() => _MeasurementStepPageState();
@@ -13,145 +20,153 @@ class MeasurementStepPage extends StatefulWidget {
 
 class _MeasurementStepPageState extends State<MeasurementStepPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _controller = TextEditingController();
+  final _inputController = TextEditingController();
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    developer.log('MeasurementStepPage initialized for category: ${widget.category}');
+    developer.log('Initial step: ${widget.model.currentStep}');
+    developer.log('Video controller status: ${widget.model.videoController != null ? "initialized" : "null"}');
+    developer.log('Video loading status: ${widget.model.isVideoLoading}');
   }
 
   @override
+  void dispose() {
+    developer.log('MeasurementStepPage disposing');
+    _inputController.dispose();
+    super.dispose();
+  }
+
+  TextEditingController _productIdController = TextEditingController();
+  bool _productIdSet = false;
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MeasurementStepModel>(
-      create: (_) => MeasurementStepModel(category: widget.category),
-      child: Consumer<MeasurementStepModel>(
-        builder: (context, model, child) {
-          if (!model.isSummary) {
-            _controller.text = model.measurements[model.currentField] ?? '';
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.category == 'housing' ? 'Housing' : 'Shaft'} Measurement'),
+        backgroundColor: widget.category == 'housing' 
+            ? const Color(0xFF1976D2) 
+            : const Color(0xFF388E3C),
+        foregroundColor: Colors.white,
+      ),
+      body: ListenableBuilder(
+        listenable: widget.model,
+        builder: (context, _) {
+          if (!_productIdSet) {
+            return Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Enter Product ID', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 24),
+                  TextFormField(
+                    controller: _productIdController,
+                    decoration: InputDecoration(
+                      labelText: 'Product ID',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_productIdController.text.trim().isNotEmpty) {
+                        setState(() {
+                          widget.model.productId = _productIdController.text.trim();
+                          _productIdSet = true;
+                        });
+                      }
+                    },
+                    child: Text('Continue'),
+                  ),
+                ],
+              ),
+            );
           }
-          final totalSteps = model.steps.length;
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Measurement (${widget.category[0].toUpperCase()}${widget.category.substring(1)})'),
-              centerTitle: true,
-            ),
-            body: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 350),
-                child: Card(
-                  key: ValueKey('${model.isSummary ? 'summary' : 'step'}_${model.currentStep}'),
-                  elevation: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
-                    child: model.isSummary
-                        ? _buildSummary(context, model)
-                        : Form(
-                            key: _formKey,
+          if (widget.model.isSummary) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: MeasurementSummaryWidget(model: widget.model),
+            );
+          }
+
+          final currentStep = widget.model.steps[widget.model.currentStep];
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Step indicator
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Step ${widget.model.currentStep + 1} of ${widget.model.steps.length}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Video player
+                  Builder(
+                    builder: (context) {
+                      developer.log('Building MediaKitVideoPlayer widget');
+                      developer.log('Player: ${widget.model.player}');
+                      developer.log('VideoController: ${widget.model.videoController}');
+                      developer.log('Is loading: ${widget.model.isVideoLoading}');
+                      
+                      try {
+                        return MediaKitVideoPlayer(
+                          player: widget.model.player,
+                          videoController: widget.model.videoController,
+                          isLoading: widget.model.isVideoLoading,
+                        );
+                      } catch (e, stackTrace) {
+                        developer.log('Error creating MediaKitVideoPlayer: $e');
+                        developer.log('Stack trace: $stackTrace');
+                        return Container(
+                          height: 300,
+                          color: Colors.grey[300],
+                          child: Center(
                             child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Step ${model.currentStep + 1} of $totalSteps',
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    if (model.controllerVideo != null)
-                                      Icon(Icons.play_circle_fill,
-                                          color: Theme.of(context).colorScheme.primary, size: 28),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                if (model.controllerVideo != null)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                    child: SizedBox(
-                                      height: 320,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Video(controller: model.controllerVideo!),
-                                      ),
-                                    ),
-                                  ),
-                                const SizedBox(height: 24),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        model.steps[model.currentStep]['label'],
-                                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                                        textAlign: TextAlign.left,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.info_outline),
-                                      tooltip: 'More info',
-                                      onPressed: () => _showStepInfoDialog(context, model),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                TextFormField(
-                                  key: ValueKey('input_${model.currentStep}'),
-                                  controller: _controller,
-                                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                                  decoration: InputDecoration(
-                                    hintText: model.steps[model.currentStep]['hint'],
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Please enter a value';
-                                    }
-                                    final numValue = num.tryParse(value.trim());
-                                    if (numValue == null) {
-                                      return 'Please enter a valid number';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 28),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    if (model.currentStep > 0)
-                                      OutlinedButton(
-                                        onPressed: () {
-                                          _formKey.currentState?.save();
-                                          model.prevStep();
-                                        },
-                                        child: const Text('Back'),
-                                      ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        if (_formKey.currentState?.validate() ?? false) {
-                                          model.nextStep(_controller.text);
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                                content: Text(
-                                                    'Please enter a valid value for step ${model.currentStep + 1}')),
-                                          );
-                                        }
-                                      },
-                                      child: Text(model.currentStep == model.steps.length - 1 ? 'Review' : 'Next'),
-                                    ),
-                                  ],
-                                ),
+                                Icon(Icons.error, color: Colors.red, size: 48),
+                                SizedBox(height: 16),
+                                Text('Error loading video player'),
+                                SizedBox(height: 8),
+                                Text('$e', style: TextStyle(fontSize: 12)),
                               ],
                             ),
                           ),
+                        );
+                      }
+                    },
                   ),
-                ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Measurement input
+                  MeasurementInputWidget(
+                    label: currentStep['label'],
+                    hint: currentStep['hint'],
+                    controller: _inputController,
+                    isLastStep: widget.model.currentStep == widget.model.steps.length - 1,
+                    onNext: _onNext,
+                    onBack: _onBack,
+                  ),
+                ],
               ),
             ),
           );
@@ -160,23 +175,116 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
     );
   }
 
-  void _showStepInfoDialog(BuildContext context, MeasurementStepModel model) {
-    final step = model.steps[model.currentStep];
+  void _onNext() {
+    if (_formKey.currentState?.validate() ?? false) {
+      widget.model.nextStep(_inputController.text);
+      _inputController.clear();
+    }
+  }
+
+  void _onBack() {
+    widget.model.prevStep();
+    // Load the previous measurement if available
+    final field = widget.model.currentField;
+    if (field.isNotEmpty && widget.model.measurements.containsKey(field)) {
+      _inputController.text = widget.model.measurements[field] ?? '';
+    }
+  }
+}
+
+class MeasurementInputWidget extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final bool isLastStep;
+  final VoidCallback onNext;
+  final VoidCallback onBack;
+
+  const MeasurementInputWidget({
+    Key? key,
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.isLastStep,
+    required this.onNext,
+    required this.onBack,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.left,
+            ),
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              tooltip: 'More info',
+              onPressed: () => _showStepInfoDialog(context),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        TextFormField(
+          key: ValueKey('input_${label}'),
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            hintText: hint,
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter a value';
+            }
+            final numValue = num.tryParse(value.trim());
+            if (numValue == null) {
+              return 'Please enter a valid number';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 28),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (!isLastStep)
+              OutlinedButton(
+                onPressed: onBack,
+                child: const Text('Back'),
+              ),
+            ElevatedButton(
+              onPressed: onNext,
+              child: Text(isLastStep ? 'Review' : 'Next'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showStepInfoDialog(BuildContext context) {
     String infoText = '';
-    if (step['field'] == 'shaft_height' || step['field'] == 'housing_height') {
+    if (label == 'Shaft Height' || label == 'Housing Height') {
       infoText = '''To measure the height:
 
 1. Extend the depth bar (the thin rod at the end of the Vernier caliper) by sliding the movable jaw.
 2. Place the base of the caliper on one end of the object and insert the depth bar until it touches the other end.
 3. Read the measurement from the main and vernier scales.''';
-    } else if (step['field'] == 'shaft_radius' || step['field'] == 'housing_radius') {
+    } else if (label == 'Shaft Radius' || label == 'Housing Radius') {
       infoText = '''To measure the radius:
 
 1. Open the Vernier caliper.
 2. Place the inside jaws inside the circular opening of the shaft/housing.
 3. Gently expand the jaws until they touch the inner walls.
 4. Read the measurement from the main and vernier scales.''';
-    } else if (step['field'] == 'housing_depth') {
+    } else if (label == 'Housing Depth') {
       infoText = '''To measure the depth:
 
 1. Extend the depth rod (the thin rod at the end of the Vernier caliper) by sliding the movable jaw.
@@ -199,8 +307,18 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
       ),
     );
   }
+}
 
-  Widget _buildSummary(BuildContext context, MeasurementStepModel model) {
+class MeasurementSummaryWidget extends StatelessWidget {
+  final MeasurementStepModel model;
+
+  const MeasurementSummaryWidget({
+    Key? key,
+    required this.model,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -214,7 +332,8 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(step['label'], style: const TextStyle(fontSize: 16)),
-                  Text(model.measurements[step['field']] ?? '-', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(model.measurements[step['field']] ?? '-',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ],
               ),
             )),
@@ -227,12 +346,19 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-          onPressed: () {
-            // TODO: Implement submission logic
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Measurements submitted!')),
+          onPressed: () async {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => const Center(child: CircularProgressIndicator()),
             );
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            final success = await model.submitMeasurements();
+            Navigator.of(context).pop(); // Remove loading dialog
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => SubmissionResultPage(success: success),
+              ),
+            );
           },
         ),
       ],

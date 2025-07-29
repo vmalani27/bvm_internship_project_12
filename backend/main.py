@@ -1,3 +1,5 @@
+
+
 import logging
 from fastapi import FastAPI, Request, HTTPException, Response, Body
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -306,13 +308,21 @@ def ensure_user_entry_csv_exists():
         write_csv(path, [], ["roll_number", "name", "date", "time", "last_login"])
 
 # Shaft measurement fields and CSV path
-SHAFT_MEASUREMENT_FIELDS = ["part_number", "roll_number", "shaft_height", "shaft_radius"]
+SHAFT_MEASUREMENT_FIELDS = ["product_id", "roll_number", "shaft_height", "shaft_radius"]
+HOUSING_MEASUREMENT_FIELDS = ["product_id", "roll_number", "housing_height", "housing_radius", "housing_depth"]
+
 
 def get_measured_shafts_path():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     logs_dir = os.path.join(current_dir, "logs")
     os.makedirs(logs_dir, exist_ok=True)
     return os.path.join(logs_dir, "measured_shafts.csv")
+
+def get_measured_housings_path():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    logs_dir = os.path.join(current_dir, "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    return os.path.join(logs_dir, "measured_housings.csv")
 
 
 def clear_user_entry_csv():
@@ -322,11 +332,19 @@ def clear_user_entry_csv():
     return {"status": "user_entry CSV deleted"}
 
 
+
 def clear_measured_shafts_csv():
     path = get_measured_shafts_path()
     if os.path.exists(path):
         os.remove(path)
     return {"status": "measured_shafts CSV deleted"}
+
+def clear_measured_housings_csv():
+    path = get_measured_housings_path()
+    if os.path.exists(path):
+        os.remove(path)
+    return {"status": "measured_housings CSV deleted"}
+
 
 
 def ensure_measured_shafts_csv_exists():
@@ -335,10 +353,18 @@ def ensure_measured_shafts_csv_exists():
         from csv_helper import write_csv
         write_csv(path, [], SHAFT_MEASUREMENT_FIELDS)
 
+def ensure_measured_housings_csv_exists():
+    path = get_measured_housings_path()
+    if not os.path.exists(path):
+        from csv_helper import write_csv
+        write_csv(path, [], HOUSING_MEASUREMENT_FIELDS)
+
+
+# Shaft measurement endpoint
 @app.post("/shaft_measurement")
 def add_shaft_measurement(entry: dict = Body(...)):
     """
-    Add a new shaft measurement. Expects a JSON body with part_number, roll_number, shaft_height, shaft_radius.
+    Add a new shaft measurement. Expects a JSON body with product_id, roll_number, shaft_height, shaft_radius.
     """
     ensure_measured_shafts_csv_exists()
     for field in SHAFT_MEASUREMENT_FIELDS:
@@ -347,6 +373,20 @@ def add_shaft_measurement(entry: dict = Body(...)):
     from csv_helper import append_csv
     append_csv(get_measured_shafts_path(), [entry], SHAFT_MEASUREMENT_FIELDS)
     return {"status": "shaft measurement added"}
+
+# Housing measurement endpoint
+@app.post("/housing_measurement")
+def add_housing_measurement(entry: dict = Body(...)):
+    """
+    Add a new housing measurement. Expects a JSON body with product_id, roll_number, housing_height, housing_radius, housing_depth.
+    """
+    ensure_measured_housings_csv_exists()
+    for field in HOUSING_MEASUREMENT_FIELDS:
+        if field not in entry:
+            raise HTTPException(status_code=400, detail=f"Missing field: {field}")
+    from csv_helper import append_csv
+    append_csv(get_measured_housings_path(), [entry], HOUSING_MEASUREMENT_FIELDS)
+    return {"status": "housing measurement added"}
 
 @app.get("/shaft_measurement")
 def get_shaft_measurements():
