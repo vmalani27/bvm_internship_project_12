@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:media_kit/media_kit.dart';
+import 'package:provider/provider.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'measurement_step_model.dart';
 
 class MeasurementStepPage extends StatefulWidget {
   final String category;
@@ -11,119 +12,156 @@ class MeasurementStepPage extends StatefulWidget {
 }
 
 class _MeasurementStepPageState extends State<MeasurementStepPage> {
-  int _currentStep = 0;
-  final Map<String, String> _measurements = {};
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _controller = TextEditingController();
 
-  Player? _player;
-  VideoController? _controllerVideo;
-
-  List<Map<String, dynamic>> get steps {
-    if (widget.category == 'shaft') {
-      return [
-        {
-          'label': 'Measure the height of the shaft',
-          'icon': Icons.height,
-          'field': 'shaft_height',
-          'hint': 'Enter shaft height (mm)',
-        },
-        {
-          'label': 'Measure the radius of the shaft',
-          'icon': Icons.radio_button_checked,
-          'field': 'shaft_radius',
-          'hint': 'Enter shaft radius (mm)',
-        },
-      ];
-    } else {
-      return [
-        {
-          'label': 'Measure the height of the housing',
-          'icon': Icons.height,
-          'field': 'housing_height',
-          'hint': 'Enter housing height (mm)',
-        },
-        {
-          'label': 'Measure the radius of the housing',
-          'icon': Icons.radio_button_checked,
-          'field': 'housing_radius',
-          'hint': 'Enter housing radius (mm)',
-        },
-        {
-          'label': 'Measure the depth of the housing',
-          'icon': Icons.vertical_align_bottom,
-          'field': 'housing_depth',
-          'hint': 'Enter housing depth (mm)',
-        },
-      ];
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
-  void initState() {
-    super.initState();
-    _initVideoForStep();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<MeasurementStepModel>(
+      create: (_) => MeasurementStepModel(category: widget.category),
+      child: Consumer<MeasurementStepModel>(
+        builder: (context, model, child) {
+          if (!model.isSummary) {
+            _controller.text = model.measurements[model.currentField] ?? '';
+          }
+          final totalSteps = model.steps.length;
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Measurement (${widget.category[0].toUpperCase()}${widget.category.substring(1)})'),
+              centerTitle: true,
+            ),
+            body: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                child: Card(
+                  key: ValueKey('${model.isSummary ? 'summary' : 'step'}_${model.currentStep}'),
+                  elevation: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+                    child: model.isSummary
+                        ? _buildSummary(context, model)
+                        : Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Step ${model.currentStep + 1} of $totalSteps',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    if (model.controllerVideo != null)
+                                      Icon(Icons.play_circle_fill,
+                                          color: Theme.of(context).colorScheme.primary, size: 28),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                if (model.controllerVideo != null)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    child: SizedBox(
+                                      height: 320,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Video(controller: model.controllerVideo!),
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        model.steps[model.currentStep]['label'],
+                                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.info_outline),
+                                      tooltip: 'More info',
+                                      onPressed: () => _showStepInfoDialog(context, model),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 18),
+                                TextFormField(
+                                  key: ValueKey('input_${model.currentStep}'),
+                                  controller: _controller,
+                                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                                  decoration: InputDecoration(
+                                    hintText: model.steps[model.currentStep]['hint'],
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Please enter a value';
+                                    }
+                                    final numValue = num.tryParse(value.trim());
+                                    if (numValue == null) {
+                                      return 'Please enter a valid number';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 28),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    if (model.currentStep > 0)
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          _formKey.currentState?.save();
+                                          model.prevStep();
+                                        },
+                                        child: const Text('Back'),
+                                      ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        if (_formKey.currentState?.validate() ?? false) {
+                                          model.nextStep(_controller.text);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Please enter a valid value for step ${model.currentStep + 1}')),
+                                          );
+                                        }
+                                      },
+                                      child: Text(model.currentStep == model.steps.length - 1 ? 'Review' : 'Next'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
-  @override
-  void didUpdateWidget(covariant MeasurementStepPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _initVideoForStep();
-  }
-
-  void _initVideoForStep() async {
-    await _player?.dispose();
-    final videoUrl = _getVideoUrlForStep();
-    _player = Player();
-    _controllerVideo = VideoController(_player!);
-    _player!.open(Media(videoUrl));
-    setState(() {});
-  }
-
-  String _getVideoUrlForStep() {
-    final step = steps[_currentStep];
-    String filename = '';
-    if (widget.category == 'shaft') {
-      if (step['field'] == 'shaft_height') filename = 'height of shaft.mkv';
-      else if (step['field'] == 'shaft_radius') filename = 'radius of shaft.mkv';
-      return 'http://127.0.0.1:8000/video/shaft/$filename';
-    } else {
-      if (step['field'] == 'housing_height') filename = 'height of hosuing.mp4';
-      else if (step['field'] == 'housing_radius') filename = 'radius of housing.mp4';
-      else if (step['field'] == 'housing_depth') filename = 'depth of housing.mp4';
-      return 'http://127.0.0.1:8000/video/housing/$filename';
-    }
-  }
-
-  void _nextStep() {
-    if (_formKey.currentState?.validate() ?? false) {
-      _measurements[steps[_currentStep]['field']] = _controller.text.trim();
-      if (_currentStep < steps.length - 1) {
-        setState(() {
-          _currentStep++;
-          _controller.text = _measurements[steps[_currentStep]['field']] ?? '';
-          _initVideoForStep();
-        });
-      } else {
-        setState(() {
-          _currentStep++;
-        });
-      }
-    }
-  }
-
-  void _prevStep() {
-    if (_currentStep > 0) {
-      setState(() {
-        _currentStep--;
-        _controller.text = _measurements[steps[_currentStep]['field']] ?? '';
-        _initVideoForStep();
-      });
-    }
-  }
-
-  void _showStepInfoDialog(BuildContext context) {
-    final step = steps[_currentStep];
+  void _showStepInfoDialog(BuildContext context, MeasurementStepModel model) {
+    final step = model.steps[model.currentStep];
     String infoText = '';
     if (step['field'] == 'shaft_height' || step['field'] == 'housing_height') {
       infoText = '''To measure the height:
@@ -162,129 +200,7 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _player?.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isSummary = _currentStep >= steps.length;
-    final totalSteps = steps.length;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Manual Measurement (${widget.category[0].toUpperCase()}${widget.category.substring(1)})'),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 350),
-          child: Card(
-            key: ValueKey(_currentStep),
-            elevation: 8,
-            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 28),
-              child: isSummary
-                  ? _buildSummary(context)
-                  : Form(
-                      key: _formKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Step ${_currentStep + 1} of $totalSteps',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              if (_controllerVideo != null)
-                                Icon(Icons.play_circle_fill, color: Theme.of(context).colorScheme.primary, size: 28),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          if (_controllerVideo != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: SizedBox(
-                                height: 320,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Video(controller: _controllerVideo!),
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 24),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  steps[_currentStep]['label'],
-                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.info_outline),
-                                tooltip: 'More info',
-                                onPressed: () => _showStepInfoDialog(context),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          TextFormField(
-                            controller: _controller,
-                            keyboardType: TextInputType.numberWithOptions(decimal: true),
-                            decoration: InputDecoration(
-                              hintText: steps[_currentStep]['hint'],
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a value';
-                              }
-                              final numValue = num.tryParse(value.trim());
-                              if (numValue == null) {
-                                return 'Please enter a valid number';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 28),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              if (_currentStep > 0)
-                                OutlinedButton(
-                                  onPressed: _prevStep,
-                                  child: const Text('Back'),
-                                ),
-                              ElevatedButton(
-                                onPressed: _nextStep,
-                                child: Text(_currentStep == steps.length - 1 ? 'Review' : 'Next'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummary(BuildContext context) {
+  Widget _buildSummary(BuildContext context, MeasurementStepModel model) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -292,13 +208,13 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
         const SizedBox(height: 16),
         const Text('Review Your Measurements', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 18),
-        ...steps.map((step) => Padding(
+        ...model.steps.map((step) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(step['label'], style: const TextStyle(fontSize: 16)),
-                  Text(_measurements[step['field']] ?? '-', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(model.measurements[step['field']] ?? '-', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 ],
               ),
             )),
@@ -322,4 +238,4 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> {
       ],
     );
   }
-} 
+}

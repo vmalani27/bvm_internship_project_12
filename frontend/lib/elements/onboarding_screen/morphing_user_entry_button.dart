@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:bvm_manual_inspection_station/elements/custom_flushbar.dart';
 import 'dart:convert';
 
 class MorphingUserEntryButton extends StatefulWidget {
@@ -8,12 +11,15 @@ class MorphingUserEntryButton extends StatefulWidget {
   final Color buttonBg;
   final Color buttonFg;
   final OutlinedBorder buttonBorder;
+  final ValueChanged<bool>? onShouldCalibrateChanged;  // New callback added
+
   const MorphingUserEntryButton({
     required this.enabled,
     required this.onComplete,
     required this.buttonBg,
     required this.buttonFg,
     required this.buttonBorder,
+    this.onShouldCalibrateChanged,  // New callback added to constructor
     super.key,
   });
 
@@ -28,6 +34,17 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   final TextEditingController _nameController = TextEditingController();
   bool _showSubmit = false;
 
+
+// void showFlushBar(BuildContext context, String message) {
+//   Flushbar(
+//     message: message,
+//     duration: const Duration(seconds: 2),
+//     backgroundColor: Colors.white,
+//     messageColor: Colors.black,
+//     margin: const EdgeInsets.all(8),
+//     borderRadius: BorderRadius.circular(8),
+//   ).show(context);
+// }
   void _openForm() {
     if (widget.enabled) {
       // Logging: Step 1 form opened
@@ -36,6 +53,8 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
       setState(() {
         _expanded = true;
       });
+
+      showCustomFlushBar(context, "Please enter your details");
     }
   }
 
@@ -71,22 +90,32 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
         if (response.statusCode == 200) {
           final Map<String, dynamic> resp = jsonDecode(response.body);
           if (resp['status'] == 'welcome_back') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Welcome back!')),
-            );
+            showCustomFlushBar(context, 'Welcome back!');
+          }
+          // Check for should_calibrate flag in response and notify parent
+          if (resp.containsKey('should_calibrate') && widget.onShouldCalibrateChanged != null) {
+            widget.onShouldCalibrateChanged!(resp['should_calibrate'] as bool);
           }
           widget.onComplete();
           _closeForm();
-        } else {
-          // Handle error (show dialog/snackbar)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to submit: \\${response.body}')),
-          );
+        } 
+      
+        
+        else {
+          // Handle error (show flushbar)
+          print(response.body);
+          showCustomFlushBar(context, 'Failed to submit: \\${response.body}');
         }
+        
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: \\${e.toString()}')),
-        );
+        print(e);
+        if(e is http.ClientException) {
+          showCustomFlushBar(context, 'please check the backend: ${e.message}');
+        } else {
+          showCustomFlushBar(context, 'Error: ${e.toString()}');
+        }
+        showCustomFlushBar(context, 'Error: ${e.toString()}');
+
       }
     }
   }
@@ -152,6 +181,8 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        
+                        
                         TextFormField(
                           controller: _rollNumberController,
                           style: TextStyle(color: widget.buttonFg, fontSize: 15),

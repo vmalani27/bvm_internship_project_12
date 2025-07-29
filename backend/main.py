@@ -178,6 +178,36 @@ def get_user_entries():
         return {"status": "no records found", "data": []}
     return {"status": "success", "data": data}
 
+@app.get("/user_entry/should_calibrate")
+def should_calibrate(roll_number: str):
+    """
+    Returns a flag should_calibrate: bool indicating if the user should calibrate.
+    If the user is new or last login was more than 24 hours ago, should_calibrate is True.
+    Otherwise, False.
+    """
+    ensure_user_entry_csv_exists()
+    data = read_csv(get_user_entry_path())
+    if not data:
+        # No users, so new user scenario
+        return {"should_calibrate": True}
+    now = datetime.datetime.now()
+    for row in data:
+        if row["roll_number"] == roll_number:
+            last_login_str = row.get("last_login")
+            if not last_login_str:
+                return {"should_calibrate": True}
+            try:
+                last_login = datetime.datetime.fromisoformat(last_login_str)
+            except Exception:
+                return {"should_calibrate": True}
+            delta = now - last_login
+            if delta.total_seconds() > 24 * 3600:
+                return {"should_calibrate": True}
+            else:
+                return {"should_calibrate": False}
+    # User not found, new user
+    return {"should_calibrate": True}
+
 @app.post("/user_entry")
 def add_user_entry(entry: dict = Body(...)):
     ensure_user_entry_csv_exists()
@@ -191,7 +221,21 @@ def add_user_entry(entry: dict = Body(...)):
             # Update last_login for returning user
             row["last_login"] = datetime.datetime.now().isoformat()
             write_csv(get_user_entry_path(), existing_entries, USER_ENTRY_FIELDS)
-            return {"status": "welcome_back"}
+            # Determine should_calibrate flag
+            should_calibrate_flag = True
+            last_login_str = row.get("last_login")
+            if last_login_str:
+                try:
+                    last_login = datetime.datetime.fromisoformat(last_login_str)
+                    delta = datetime.datetime.now() - last_login
+                    if delta.total_seconds() <= 24 * 3600:
+                        should_calibrate_flag = False
+                except Exception:
+                    should_calibrate_flag = True
+            else:
+                should_calibrate_flag = True
+            return {"status": "welcome_back", "should_calibrate": should_calibrate_flag}
+        # If somehow no return happened above, fall through to return below
     # New user: add entry
     now = datetime.datetime.now().isoformat()
     new_entry = {
@@ -202,7 +246,20 @@ def add_user_entry(entry: dict = Body(...)):
         "last_login": now
     }
     append_csv(get_user_entry_path(), [new_entry], USER_ENTRY_FIELDS)
-    return {"status": "entry added"}
+    # New user should calibrate
+    return {"status": "entry added", "should_calibrate": True}
+    # New user: add entry
+    now = datetime.datetime.now().isoformat()
+    new_entry = {
+        "roll_number": entry["roll_number"],
+        "name": entry["name"],
+        "date": entry.get("date", now[:10]),
+        "time": entry.get("time", now[11:19]),
+        "last_login": now
+    }
+    append_csv(get_user_entry_path(), [new_entry], USER_ENTRY_FIELDS)
+    # New user should calibrate
+    return {"status": "entry added", "should_calibrate": True}
 
 @app.put("/user_entry")
 def update_user_entry(entry: dict = Body(...)):
@@ -246,7 +303,7 @@ def ensure_user_entry_csv_exists():
     path = get_user_entry_path()
     if not os.path.exists(path):
         from csv_helper import write_csv
-        write_csv(path, [], ["roll_number", "name", "date", "time"])
+        write_csv(path, [], ["roll_number", "name", "date", "time", "last_login"])
 
 # Shaft measurement fields and CSV path
 SHAFT_MEASUREMENT_FIELDS = ["part_number", "roll_number", "shaft_height", "shaft_radius"]

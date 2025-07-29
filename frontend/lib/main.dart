@@ -7,5 +7,5 @@ import 'config/app_config.dart';
 void main() {
   MediaKit.ensureInitialized();
   developer.log('Starting Flutter app with backend URL: ${AppConfig.backendBaseUrl}');
-  runApp(const BvmManualInspectionStationApp());
+  runApp(BvmManualInspectionStationApp());
 } 
