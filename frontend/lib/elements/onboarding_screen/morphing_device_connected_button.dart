@@ -281,8 +281,8 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
                                 style: TextStyle(
                                   color: currentButtonFg, // Use currentButtonFg
                                   fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.7,
                                 ),
                               ),
                             ),

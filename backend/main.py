@@ -1,5 +1,4 @@
 
-
 import logging
 from fastapi import FastAPI, Request, HTTPException, Response, Body
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -63,6 +62,23 @@ CHUNK_SIZE = 1024 * 1024  # 1MB
 @app.get("/")
 async def root():
     return {"message": "Video API Server is running"}
+
+@app.get("/measured_units/{roll_number}")
+def get_measured_units_by_roll_number(roll_number: str):
+    ensure_measured_shafts_csv_exists()
+    ensure_measured_housings_csv_exists()
+    shaft_data = read_csv(get_measured_shafts_path())
+    housing_data = read_csv(get_measured_housings_path())
+    shaft_filtered = [row for row in shaft_data if row.get("roll_number") == roll_number]
+    housing_filtered = [row for row in housing_data if row.get("roll_number") == roll_number]
+    return {
+        "status": "success",
+        "roll_number": roll_number,
+        "shaft_measurements": shaft_filtered,
+        "housing_measurements": housing_filtered
+    }
+
+
 
 @app.get("/debug/paths")
 async def debug_paths():

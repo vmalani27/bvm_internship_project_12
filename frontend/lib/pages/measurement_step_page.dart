@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'measurement_step_model.dart';
-import 'media_kit_video_player.dart';
+import '../models/measurement_step_model.dart';
+import '../config/media_kit_video_player.dart';
 import 'submission_result_page.dart';
 import 'dart:developer' as developer;
 

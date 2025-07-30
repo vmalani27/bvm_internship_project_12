@@ -9,6 +9,7 @@ class BvmManualInspectionStationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BVM Manual Inspection Station',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.indigo,
@@ -69,9 +70,7 @@ class OnboardingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAFC), // Simple, clean background
-      appBar: AppBar(
-        title: const Text('BVM Manual Inspection Station'),
-      ),
+      
       body: const HomeContent(),
     );
   }

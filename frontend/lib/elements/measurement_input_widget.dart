@@ -1,6 +1,7 @@
 import 'package:bvm_manual_inspection_station/models/measurement_step_model.dart';
 import 'package:bvm_manual_inspection_station/config/media_kit_video_player.dart';
 import 'package:flutter/material.dart';
+import '../config/app_theme.dart';
 
 class MeasurementInputWidget extends StatelessWidget {
   final String label;
@@ -25,22 +26,36 @@ class MeasurementInputWidget extends StatelessWidget {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.symmetric(vertical: 12),
+      color: AppTheme.cardBg,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(label, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               decoration: InputDecoration(
                 labelText: hint,
                 border: const OutlineInputBorder(),
+                filled: true,
+                fillColor: AppTheme.bgColor,
               ),
+              style: const TextStyle(color: AppTheme.textDark),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+              ),
               onPressed: () {
                 // Placeholder: implement step logic
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -153,24 +168,25 @@ class MeasurementSummaryWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.all(24),
+      color: AppTheme.cardBg,
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 48),
+            const Icon(Icons.check_circle, color: AppTheme.secondary, size: 48),
             const SizedBox(height: 16),
-            const Text('Review Your Measurements', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text('Review Your Measurements', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
             const SizedBox(height: 18),
             ...model.steps.map((step) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(step['label'], style: const TextStyle(fontSize: 16)),
+                  Text(step['label'], style: const TextStyle(fontSize: 16, color: AppTheme.textDark)),
                   Text(model.measurements[step['field']] ?? '-',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.primary)),
                 ],
               ),
             )),
@@ -179,9 +195,11 @@ class MeasurementSummaryWidget extends StatelessWidget {
               icon: const Icon(Icons.home),
               label: const Text('Back to Home'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: AppTheme.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
               onPressed: () {
                 Navigator.of(context).popUntil((route) => route.isFirst);

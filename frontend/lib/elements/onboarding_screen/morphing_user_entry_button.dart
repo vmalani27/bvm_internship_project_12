@@ -1,9 +1,10 @@
 import 'dart:io';
 
+import 'package:bvm_manual_inspection_station/models/user_session.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bvm_manual_inspection_station/elements/custom_flushbar.dart';
-import 'package:bvm_manual_inspection_station/user_session.dart';
+// import 'package:bvm_manual_inspection_station/config/user_session.dart';
 import 'dart:convert';
 
 class MorphingUserEntryButton extends StatefulWidget {
@@ -278,21 +279,14 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                   borderRadius: BorderRadius.circular(22),
                   onTap: widget.enabled ? _openForm : null,
                   child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.login, color: widget.buttonFg, size: 28),
-                        const SizedBox(width: 10),
-                        Text(
-                          'User Entry',
-                          style: TextStyle(
-                            color: widget.buttonFg,
-                            fontSize: 21,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.7,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'User Entry',
+                      style: TextStyle(
+                        color: widget.buttonFg,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.7,
+                      ),
                     ),
                   ),
                 ),
