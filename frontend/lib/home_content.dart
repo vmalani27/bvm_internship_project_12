@@ -1,8 +1,7 @@
-
-
 import 'dart:convert';
 import 'dart:async';
 // (removed misplaced import)
+import 'package:bvm_manual_inspection_station/elements/onboarding_screen/adb_device_check_button_archive.dart';
 import 'package:bvm_manual_inspection_station/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -101,130 +100,139 @@ class _HomeContentState extends State<HomeContent> {
               ],
               border: Border.all(color: AppTheme.primary.withOpacity(0.08), width: 1.5),
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                // Stepper
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Step 1 Circle
-                    _ThemedStepCircle(
-                      isCompleted: _completedStep > 1,
-                      isActive: _completedStep == 1,
-                      label: '1',
-                      activeColor: stepActive,
-                      completedColor: stepCompleted,
-                      inactiveColor: stepInactive,
-                    ),
-                    const SizedBox(width: 40),
-                    _ThemedStepLine(isActive: _completedStep >= 2, color: stepActive),
-                    const SizedBox(width: 40),
-                    // Step 2 Circle
-                    _ThemedStepCircle(
-                      isCompleted: _completedStep > 2,
-                      isActive: _completedStep == 2,
-                      label: '2',
-                      activeColor: stepActive,
-                      completedColor: stepCompleted,
-                      inactiveColor: stepInactive,
-                    ),
-                    if (_shouldCalibrate) ...[
-                      const SizedBox(width: 40),
-                      _ThemedStepLine(isActive: _completedStep == 3, color: stepActive),
-                      const SizedBox(width: 40),
-                      _ThemedStepCircle(
-                        isCompleted: _completedStep > 2 && _completedStep == 3,
-                        isActive: _completedStep == 3,
-                        label: '3',
-                        activeColor: stepActive,
-                        completedColor: stepCompleted,
-                        inactiveColor: stepInactive,
+            child: Center(
+              child: Card(
+                color: const Color(0xFF23242A),
+                elevation: 10,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 56, 32, 36),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Stepper
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Step 1 Circle
+                          _ThemedStepCircle(
+                            isCompleted: _completedStep > 1,
+                            isActive: _completedStep == 1,
+                            label: '1',
+                            activeColor: stepActive,
+                            completedColor: stepCompleted,
+                            inactiveColor: stepInactive,
+                          ),
+                          const SizedBox(width: 40),
+                          _ThemedStepLine(isActive: _completedStep >= 2, color: stepActive),
+                          const SizedBox(width: 40),
+                          // Step 2 Circle
+                          _ThemedStepCircle(
+                            isCompleted: _completedStep > 2,
+                            isActive: _completedStep == 2,
+                            label: '2',
+                            activeColor: stepActive,
+                            completedColor: stepCompleted,
+                            inactiveColor: stepInactive,
+                          ),
+                          if (_shouldCalibrate) ...[
+                            const SizedBox(width: 40),
+                            _ThemedStepLine(isActive: _completedStep == 3, color: stepActive),
+                            const SizedBox(width: 40),
+                            _ThemedStepCircle(
+                              isCompleted: _completedStep > 2 && _completedStep == 3,
+                              isActive: _completedStep == 3,
+                              label: '3',
+                              activeColor: stepActive,
+                              completedColor: stepCompleted,
+                              inactiveColor: stepInactive,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      // Steps
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Step 1
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              MorphingUserEntryButton(
+                                enabled: _completedStep == 0,
+                                onComplete: () {
+                                  setState(() {
+                                    _completedStep = 1;
+                                  });
+                                },
+                                onShouldCalibrateChanged: (bool value) {
+                                  setState(() {
+                                    _shouldCalibrate = value;
+                                  });
+                                },
+                                buttonBg: getButtonBg(1),
+                                buttonFg: getButtonFg(1),
+                                buttonBorder: getButtonBorder(1),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 32),
+                          // Step 2
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              MorphingDeviceConnectedButton(
+                                enabled: _completedStep == 1,
+                                onComplete: () {
+                                  setState(() {
+                                    _completedStep = 2;
+                                  });
+                                  if (!_shouldCalibrate) {
+                                    // Skip calibration and move to next page
+                                    print('[LOG] Skipping calibration, moving to next page');
+                                    Future.delayed(const Duration(milliseconds: 600), () {
+                                      Navigator.of(context).push(createSlideUpRoute());
+                                    });
+                                  }
+                                },
+                                buttonBg: getButtonBg(2),
+                                buttonFg: getButtonFg(2),
+                                buttonBorder: getButtonBorder(2),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(width: 32),
+                          // Step 3
+                          if (_shouldCalibrate)
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                MorphingCalibrationButton(
+                                  enabled: _completedStep == 2,
+                                  onComplete: () {
+                                    setState(() {
+                                      _completedStep = 3;
+                                    });
+                                    print('[LOG] Step 3: Calibration started');
+                                    print('[LOG] Step 3: Calibration completed');
+                                    Future.delayed(const Duration(milliseconds: 600), () {
+                                      Navigator.of(context).push(createSlideUpRoute());
+                                    });
+                                  },
+                                  buttonBg: getButtonBg(3),
+                                  buttonFg: getButtonFg(3),
+                                  buttonBorder: getButtonBorder(3),
+                                ),
+                              ] ,
+                            ),
+                        ],
                       ),
                     ],
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 32),
-                // Steps
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Step 1
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MorphingUserEntryButton(
-                          enabled: _completedStep == 0,
-                          onComplete: () {
-                            setState(() {
-                              _completedStep = 1;
-                            });
-                          },
-                          onShouldCalibrateChanged: (bool value) {
-                            setState(() {
-                              _shouldCalibrate = value;
-                            });
-                          },
-                          buttonBg: getButtonBg(1),
-                          buttonFg: getButtonFg(1),
-                          buttonBorder: getButtonBorder(1),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 32),
-                    // Step 2
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        MorphingDeviceConnectedButton(
-                          enabled: _completedStep == 1,
-                          onComplete: () {
-                            setState(() {
-                              _completedStep = 2;
-                            });
-                            if (!_shouldCalibrate) {
-                              // Skip calibration and move to next page
-                              print('[LOG] Skipping calibration, moving to next page');
-                              Future.delayed(const Duration(milliseconds: 600), () {
-                                Navigator.of(context).push(createSlideUpRoute());
-                              });
-                            }
-                          },
-                          buttonBg: getButtonBg(2),
-                          buttonFg: getButtonFg(2),
-                          buttonBorder: getButtonBorder(2),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 32),
-                    // Step 3
-                    if (_shouldCalibrate)
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          MorphingCalibrationButton(
-                            enabled: _completedStep == 2,
-                            onComplete: () {
-                              setState(() {
-                                _completedStep = 3;
-                              });
-                              print('[LOG] Step 3: Calibration started');
-                              print('[LOG] Step 3: Calibration completed');
-                              Future.delayed(const Duration(milliseconds: 600), () {
-                                Navigator.of(context).push(createSlideUpRoute());
-                              });
-                            },
-                            buttonBg: getButtonBg(3),
-                            buttonFg: getButtonFg(3),
-                            buttonBorder: getButtonBorder(3),
-                          ),
-                        ] ,
-                      ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),

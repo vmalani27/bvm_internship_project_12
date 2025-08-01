@@ -30,9 +30,28 @@ class _BvmAppBarState extends State<BvmAppBar> {
 
   void _updateDateTime() {
     final now = DateTime.now();
+    
+    // More appealing date format: "August 1, 2025"
+    const List<String> monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June', 'July',
+      'August', 'September', 'October', 'November', 'December'
+    ];
+    final String month = monthNames[now.month - 1];
+    final String day = now.day.toString();
+    final String year = now.year.toString();
+
+    // More appealing time format: "03:45 PM"
+    final int hour = now.hour;
+    final int minute = now.minute;
+    final String period = hour >= 12 ? 'PM' : 'AM';
+    int hour12 = hour % 12;
+    if (hour12 == 0) {
+      hour12 = 12; // Handle midnight and noon
+    }
+
     setState(() {
-      _date = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-      _time = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
+      _date = "$month $day, $year";
+      _time = "${hour12.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period";
     });
   }
 
