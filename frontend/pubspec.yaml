@@ -43,6 +43,8 @@ dependencies:
   media_kit: ^1.2.0 # Check pub.dev for the absolute latest if different
   media_kit_video: ^1.3.0  # Check pub.dev for the absolute latest if different
   media_kit_libs_windows_video: ^1.0.0 # Windows support for media_kit
+  media_kit_libs_android_video: ^1.0.0 # Android support for media_kit
+  media_kit_libs_ios_video: ^1.0.0 # iOS support for media_kit
   csv: ^5.0.2
   path: ^1.8.3
   google_fonts: ^6.2.1
