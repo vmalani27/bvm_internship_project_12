@@ -1,8 +1,9 @@
 
 class AppConfig {
   // Development environment (localhost)
-  static const String backendBaseUrlDev = 'http://localhost:8000';
-  
+  // static const String backendBaseUrlDev = 'http://localhost:8000';
+  static const String backendBaseUrlDev = 'https://operating-technician-split-fd.trycloudflare.com';
+    
   // Production environment (hosted backend)
   // Replace with your actual hosted backend URL
   static const String backendBaseUrlProd = 'https://your-backend-domain.com';

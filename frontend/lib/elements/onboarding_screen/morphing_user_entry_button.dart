@@ -4,6 +4,7 @@ import 'package:bvm_manual_inspection_station/models/user_session.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bvm_manual_inspection_station/elements/custom_flushbar.dart';
+import 'package:bvm_manual_inspection_station/config/app_config.dart';
 // import 'package:bvm_manual_inspection_station/config/user_session.dart';
 import 'dart:convert';
 
@@ -82,9 +83,9 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
           "time": time,
           "last_login": ""
         };
-
+        final baseurl= AppConfig.backendBaseUrl;
         final response = await http.post(
-          Uri.parse('http://127.0.0.1:8000/user_entry'),
+          Uri.parse('$baseurl/user_entry'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(entry),
         );

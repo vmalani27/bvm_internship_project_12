@@ -10,6 +10,7 @@ import 'elements/onboarding_screen/morphing_device_connected_button.dart';
 import 'elements/onboarding_screen/morphing_calibration_button.dart';
 import 'config/app_theme.dart';
 import 'elements/common_appbar.dart';
+import 'config/app_config.dart';
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
@@ -32,7 +33,8 @@ class _HomeContentState extends State<HomeContent> {
     const String rollNumber = "test_roll_number";
 
     try {
-      final response = await Uri.parse('http://127.0.0.1:8000/user_entry/should_calibrate?roll_number=$rollNumber').resolveUri(Uri());
+      final baseurl=AppConfig.backendBaseUrl;
+      final response = await Uri.parse('$baseurl/user_entry/should_calibrate?roll_number=$rollNumber').resolveUri(Uri());
       final httpResponse = await http.get(response);
       if (httpResponse.statusCode == 200) {
         final data = jsonDecode(httpResponse.body);
