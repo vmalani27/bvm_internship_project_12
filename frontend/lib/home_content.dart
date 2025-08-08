@@ -9,7 +9,7 @@ import 'elements/onboarding_screen/morphing_user_entry_button.dart';
 import 'elements/onboarding_screen/morphing_device_connected_button.dart';
 import 'elements/onboarding_screen/morphing_calibration_button.dart';
 import 'config/app_theme.dart';
-import 'elements/common_appbar.dart';
+import 'elements/common_elements/common_appbar.dart';
 import 'config/app_config.dart';
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});

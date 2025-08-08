@@ -7,7 +7,7 @@ import os
 from csv_helper import read_csv, write_csv, append_csv, csv_to_dict
 import datetime
 
-# Set up logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -25,14 +25,6 @@ CSV_FILES = {
 
 print(f"CSV file path: {CSV_FILES['user_entry']}")
 
-# df=read_csv(CSV_FILES["user_entry"]["path"])
-# if not df:
-#     logger.info("CSV file is empty or does not exist.")
-# else:
-#     logger.info(f"CSV file loaded successfully with {len(df)} records.")
-# input()
-
-# Allow CORS for local development (adjust origins as needed)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

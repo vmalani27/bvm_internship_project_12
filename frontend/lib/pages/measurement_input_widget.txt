@@ -15,7 +15,7 @@ class MeasurementInputWidget extends StatelessWidget {
     required this.label,
     required this.hint,
     required this.controller,
-    required this.isLastStep,
+    required this.isLastStep, required void Function() onNext, required void Function() onBack, required Color accent,
     // this.onNext,
     // this.onBack,
   }) : super(key: key);

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:bvm_manual_inspection_station/models/user_session.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:bvm_manual_inspection_station/elements/custom_flushbar.dart';
+import 'package:bvm_manual_inspection_station/elements/common_elements/common_flushbar.dart';
 import 'package:bvm_manual_inspection_station/config/app_config.dart';
 // import 'package:bvm_manual_inspection_station/config/user_session.dart';
 import 'dart:convert';
@@ -39,9 +39,9 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
 
 
 // void showFlushBar(BuildContext context, String message) {
-//   Flushbar(
+//   Flushbar(  
 //     message: message,
-//     duration: const Duration(seconds: 2),
+//     duration: const Dura+tion(seconds: 2),
 //     backgroundColor: Colors.white,
 //     messageColor: Colors.black,
 //     margin: const EdgeInsets.all(8),

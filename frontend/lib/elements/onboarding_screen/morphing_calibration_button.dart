@@ -1,7 +1,7 @@
 import 'package:bvm_manual_inspection_station/elements/onboarding_screen/dialogboxes/caliper_calibration_dialog.dart';
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Future.delayed
-import 'package:bvm_manual_inspection_station/elements/custom_flushbar.dart';
+import 'package:bvm_manual_inspection_station/elements/common_elements/common_flushbar.dart';
 import 'dart:convert';
 
 class MorphingCalibrationButton extends StatefulWidget {

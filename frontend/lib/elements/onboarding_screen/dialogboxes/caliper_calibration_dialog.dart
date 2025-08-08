@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Timer
-import '../../custom_flushbar.dart';
+import '../../common_elements/common_flushbar.dart';
 // A simple class to hold calibration results for each step
 class CalibrationResult {
   final double target;

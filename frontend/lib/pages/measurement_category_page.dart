@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import 'measurement_step_page.dart';
 import '../models/measurement_step_model.dart';
-import '../elements/common_appbar.dart';
+import '../elements/common_elements/common_appbar.dart';
 
 // MeasurementCategoryPage: Ask user to select Shaft or Housing for manual measurement
 class MeasurementCategoryPage extends StatefulWidget {

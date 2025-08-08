@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
 import 'measurement_category_page.dart';
-import '../elements/common_appbar.dart';
+import '../elements/common_elements/common_appbar.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({Key? key}) : super(key: key);

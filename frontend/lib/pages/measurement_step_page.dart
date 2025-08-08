@@ -6,6 +6,7 @@ import '../config/media_kit_video_player.dart';
 import '../config/app_theme.dart';
 import 'submission_result_page.dart';
 import 'dart:developer' as developer;
+import '../elements/measurement_input_widget.dart';
 
 class MeasurementStepPage extends StatefulWidget {
   final String category;
@@ -24,11 +25,19 @@ class MeasurementStepPage extends StatefulWidget {
 class _MeasurementStepPageState extends State<MeasurementStepPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _inputController = TextEditingController();
-  
+  final _productIdController = TextEditingController();
+  final FocusNode _caliperFocusNode = FocusNode();
+
   late AnimationController _titleController;
   late AnimationController _contentController;
   late Animation<double> _titleAnimation;
   late Animation<double> _contentAnimation;
+
+  bool _productIdSet = false;
+  bool _isCaliperChecking = false;
+  String? _caliperError;
+  Timer? _checkTimeoutTimer;
+  Timer? _inputCompletionTimer;
 
   @override
   void initState() {
@@ -36,6 +45,7 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> with TickerPr
     
     _titleController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     _contentController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
+    _inputController.addListener(_handleCaliperInput);
     
     _titleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic)
@@ -59,11 +69,111 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> with TickerPr
     _inputController.dispose();
     _titleController.dispose();
     _contentController.dispose();
+    _inputController.removeListener(_handleCaliperInput);
+    _caliperFocusNode.dispose();
+    _checkTimeoutTimer?.cancel();
+    _inputCompletionTimer?.cancel();
     super.dispose();
   }
+  
+  /// Handles input from the controller, triggered by the caliper.
+  void _handleCaliperInput() {
+    developer.log('Controller received input. Current text: "${_inputController.text}"');
+    if (!_isCaliperChecking) return;
+    
+    String currentText = _inputController.text;
+    
+    // Debounce the input to wait for the complete value
+    _inputCompletionTimer?.cancel();
+    _inputCompletionTimer = Timer(const Duration(milliseconds: 150), () {
+      developer.log('Input debounce complete. Processing caliper measurement.');
+      _processCaliperMeasurement(currentText);
+    });
+  }
 
-  TextEditingController _productIdController = TextEditingController();
-  bool _productIdSet = false;
+  /// Processes the complete measurement received from the caliper.
+  void _processCaliperMeasurement(String measurementText) {
+    _checkTimeoutTimer?.cancel();
+    String dimension = measurementText.trim();
+    developer.log('Processing raw caliper value: "$dimension"');
+    
+    if (double.tryParse(dimension) != null) {
+      developer.log('Caliper input detected and validated. Value: $dimension');
+      setState(() {
+        _isCaliperChecking = false;
+        _caliperError = null;
+      });
+      _caliperFocusNode.unfocus();
+      _onNext(); // Auto-advance the step
+    } else {
+      developer.log('Invalid caliper input received. Clearing controller.');
+      _inputController.clear();
+      setState(() {
+        _isCaliperChecking = false;
+        _caliperError = 'invalid';
+      });
+    }
+  }
+
+  /// Starts the caliper connection check and focuses the hidden field.
+  void _initiateCaliperCheck() {
+    developer.log('Starting caliper check for "${widget.model.currentField}".');
+    setState(() {
+      _isCaliperChecking = true;
+      _caliperError = null; // Clear any previous errors
+    });
+    _inputController.clear();
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please press the data button on your caliper now.'),
+        duration: Duration(seconds: 10),
+      ),
+    );
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusScope.of(context).requestFocus(_caliperFocusNode);
+      developer.log('Hidden TextField for caliper input now has focus.');
+    });
+
+    _checkTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (_isCaliperChecking) {
+        setState(() {
+          _isCaliperChecking = false;
+          _caliperError = 'timeout';
+        });
+        _caliperFocusNode.unfocus();
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Caliper Not Detected'),
+            content: const Text('The caliper was not detected. Please ensure it is connected and try again.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    });
+  }
+
+  void _onNext() {
+    if (_formKey.currentState?.validate() ?? false) {
+      widget.model.nextStep(_inputController.text);
+      _inputController.clear();
+    }
+  }
+
+  void _onBack() {
+    widget.model.prevStep();
+    final field = widget.model.currentField;
+    if (field.isNotEmpty && widget.model.measurements.containsKey(field)) {
+      _inputController.text = widget.model.measurements[field] ?? '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -510,6 +620,9 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> with TickerPr
                               onNext: _onNext,
                               onBack: _onBack,
                               accent: accent,
+                              onCaliperCheckPressed: _initiateCaliperCheck,
+                              caliperFocusNode: _caliperFocusNode,
+                              isCaliperChecking: _isCaliperChecking,
                             ),
                           ],
                         ),
@@ -534,488 +647,9 @@ class _MeasurementStepPageState extends State<MeasurementStepPage> with TickerPr
 
   void _onBack() {
     widget.model.prevStep();
-    // Load the previous measurement if available
     final field = widget.model.currentField;
     if (field.isNotEmpty && widget.model.measurements.containsKey(field)) {
       _inputController.text = widget.model.measurements[field] ?? '';
     }
-  }
-}
-
-class MeasurementInputWidget extends StatefulWidget {
-  final String label;
-  final String hint;
-  final TextEditingController controller;
-  final bool isLastStep;
-  final VoidCallback onNext;
-  final VoidCallback onBack;
-  final Color accent;
-
-  const MeasurementInputWidget({
-    Key? key,
-    required this.label,
-    required this.hint,
-    required this.controller,
-    required this.isLastStep,
-    required this.onNext,
-    required this.onBack,
-    required this.accent,
-  }) : super(key: key);
-
-  @override
-  State<MeasurementInputWidget> createState() => _MeasurementInputWidgetState();
-}
-
-class _MeasurementInputWidgetState extends State<MeasurementInputWidget> {
-  final TextEditingController _caliperInputController = TextEditingController();
-  final FocusNode _caliperFocusNode = FocusNode();
-  bool _checking = false;
-  Timer? _checkTimer;
-  String _lastInput = '';
-
-    @override
-  void initState() {
-    super.initState();
-    _startCaliperDetection();
-  }
-
-  @override
-  void dispose() {
-    _checkTimer?.cancel();
-    _caliperInputController.dispose();
-    _caliperFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _startCaliperDetection() {
-    _checkTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (!_checking && _caliperInputController.text != _lastInput) {
-        _checking = true;
-        _lastInput = _caliperInputController.text;
-        
-        if (_lastInput.isNotEmpty) {
-          // Simulate caliper input detection
-          final caliperValue = _lastInput.trim();
-          if (caliperValue.isNotEmpty) {
-            widget.controller.text = caliperValue;
-            _caliperInputController.clear();
-            _lastInput = '';
-            
-            // Auto-advance after a short delay
-            Future.delayed(const Duration(milliseconds: 500), () {
-              if (mounted) {
-                widget.onNext();
-              }
-            });
-          }
-        }
-        _checking = false;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Color textColor = AppTheme.textDark;
-    final Color cardBg = AppTheme.cardBg;
-    
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: cardBg.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.info_outline_rounded, color: widget.accent),
-                    tooltip: 'More info',
-                    onPressed: () => _showStepInfoDialog(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                key: ValueKey('input_${widget.label}'),
-                controller: widget.controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: TextStyle(fontSize: 16, color: textColor),
-                decoration: InputDecoration(
-                  hintText: widget.hint,
-                  hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: widget.accent.withOpacity(0.3), width: 1.5),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: widget.accent, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.05),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a value';
-                  }
-                  final numValue = num.tryParse(value.trim());
-                  if (numValue == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (!widget.isLastStep)
-                    Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: widget.onBack,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.arrow_back_rounded, size: 20, color: textColor.withOpacity(0.8)),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Back',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: textColor.withOpacity(0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          widget.accent,
-                          widget.accent.withOpacity(0.8),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: widget.accent.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: widget.onNext,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.isLastStep ? 'Review' : 'Next',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                widget.isLastStep ? Icons.check_rounded : Icons.arrow_forward_rounded,
-                                size: 20,
-                                color: Colors.white,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        // Hidden TextField to capture caliper input
-        Positioned.fill(
-          child: Opacity(
-            opacity: 0.0,
-            child: AbsorbPointer(
-              absorbing: !_checking,
-              child: TextField(
-                controller: _caliperInputController,
-                focusNode: _caliperFocusNode,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                onChanged: (value) {
-                  // This will be handled by the timer
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showStepInfoDialog(BuildContext context) {
-    String infoText = '';
-    if (widget.label == 'Shaft Height' || widget.label == 'Housing Height') {
-      infoText = '''To measure the height:
-
-1. Extend the depth bar (the thin rod at the end of the Vernier caliper) by sliding the movable jaw.
-2. Place the base of the caliper on one end of the object and insert the depth bar until it touches the other end.
-3. Read the measurement from the main and vernier scales.''';
-    } else if (widget.label == 'Shaft Radius' || widget.label == 'Housing Radius') {
-      infoText = '''To measure the radius:
-
-1. Open the Vernier caliper.
-2. Place the inside jaws inside the circular opening of the shaft/housing.
-3. Gently expand the jaws until they touch the inner walls.
-4. Read the measurement from the main and vernier scales.''';
-    } else if (widget.label == 'Housing Depth') {
-      infoText = '''To measure the depth:
-
-1. Extend the depth rod (the thin rod at the end of the Vernier caliper) by sliding the movable jaw.
-2. Insert the depth rod into the hole or cavity until the base of the caliper rests flat on the surface.
-3. Read the measurement from the main and vernier scales.''';
-    } else {
-      infoText = 'Follow the instructions for this measurement.';
-    }
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Measurement Info'),
-        content: Text(infoText),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class MeasurementSummaryWidget extends StatelessWidget {
-  final MeasurementStepModel model;
-
-  const MeasurementSummaryWidget({
-    Key? key,
-    required this.model,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final Color textColor = AppTheme.textDark;
-    final Color accent = AppTheme.primary;
-    final Color cardBg = AppTheme.cardBg;
-    
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: cardBg.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 25,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.green.withOpacity(0.2),
-                  Colors.green.withOpacity(0.1),
-                ],
-              ),
-            ),
-            child: Icon(Icons.check_circle_rounded, size: 48, color: Colors.green),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Review Your Measurements',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ...model.steps.map((step) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  step['label'],
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: textColor.withOpacity(0.8),
-                  ),
-                ),
-                Text(
-                  model.measurements[step['field']] ?? '-',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: accent,
-                  ),
-                ),
-              ],
-            ),
-          )),
-          const SizedBox(height: 32),
-          Container(
-            width: double.infinity,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.green,
-                  Colors.green.withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.green.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-                         child: Material(
-               color: Colors.transparent,
-               child: InkWell(
-                 borderRadius: BorderRadius.circular(16),
-                 onTap: () async {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => Center(child: CircularProgressIndicator()),
-                  );
-                  final success = await model.submitMeasurements();
-                  Navigator.of(context).pop(); // Remove loading dialog
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => SubmissionResultPage(success: success),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.send_rounded,
-                        size: 24,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Submit Measurements',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

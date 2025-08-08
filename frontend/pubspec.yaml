@@ -50,6 +50,7 @@ dependencies:
   google_fonts: ^6.2.1
 
   another_flushbar:
+  dotenv: ^4.2.0
 
 
 dev_dependencies:
