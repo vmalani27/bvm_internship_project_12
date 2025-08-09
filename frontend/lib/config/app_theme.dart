@@ -11,7 +11,7 @@ class AppTheme {
         colorScheme: ColorScheme.dark(
           primary: primary,
           secondary: secondary,
-          background: bgColor,
+          surface: bgColor,
         ),
         textTheme: const TextTheme(
           displayLarge: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Inter'),

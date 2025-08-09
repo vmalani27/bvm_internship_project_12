@@ -22,7 +22,7 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
   // You can adjust these values based on your requirements
   final List<double> _calibrationSteps = [0.00, 10.00, 25.00, 50.00, 100.00];
   int _currentStepIndex = 0;
-  List<CalibrationResult> _results = [];
+  final List<CalibrationResult> _results = [];
 
   final TextEditingController _caliperInputController = TextEditingController();
   final FocusNode _caliperFocusNode = FocusNode();
@@ -210,7 +210,7 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
       canPop: false, // Prevent popping directly
       onPopInvoked: (didPop) async {
         if (didPop) return; // If system pop already handled, do nothing
-        final bool? shouldPop = await _onWillPop();
+        final bool shouldPop = await _onWillPop();
         if (shouldPop == true) {
           Navigator.of(context).pop(false); // Indicate calibration was cancelled
         }
@@ -237,7 +237,7 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
                       IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () async {
-                          final bool? shouldPop = await _onWillPop();
+                          final bool shouldPop = await _onWillPop();
                           if (shouldPop == true) {
                             Navigator.of(dialogContext).pop(false); // Indicate cancellation
                           }

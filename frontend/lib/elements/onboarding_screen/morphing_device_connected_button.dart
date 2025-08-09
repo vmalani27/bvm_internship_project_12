@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Future.delayed and Timer
 import 'package:bvm_manual_inspection_station/elements/common_elements/common_flushbar.dart';
-import 'dart:convert';
 
 class MorphingDeviceConnectedButton extends StatefulWidget {
   final bool enabled;

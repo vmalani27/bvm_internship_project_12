@@ -170,8 +170,8 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
           child: DataTable(
               columnSpacing: 24,
               horizontalMargin: 20,
-              headingRowColor: MaterialStateProperty.all(Colors.transparent),
-              dataRowColor: MaterialStateProperty.all(Colors.transparent),
+              headingRowColor: WidgetStateProperty.all(Colors.transparent),
+              dataRowColor: WidgetStateProperty.all(Colors.transparent),
               border: TableBorder(
                 horizontalInside: BorderSide(
                   color: Colors.white.withOpacity(0.1),

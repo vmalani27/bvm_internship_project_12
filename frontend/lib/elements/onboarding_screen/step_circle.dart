@@ -4,7 +4,7 @@ class StepCircle extends StatelessWidget {
   final bool isCompleted;
   final bool isActive;
   final String label;
-  const StepCircle({required this.isCompleted, required this.isActive, required this.label});
+  const StepCircle({super.key, required this.isCompleted, required this.isActive, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class StepCircle extends StatelessWidget {
 
 class StepLine extends StatelessWidget {
   final bool isActive;
-  const StepLine({required this.isActive});
+  const StepLine({super.key, required this.isActive});
 
   @override
   Widget build(BuildContext context) {

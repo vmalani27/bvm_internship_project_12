@@ -34,7 +34,7 @@ class _HomeContentState extends State<HomeContent> {
 
     try {
       final baseurl=AppConfig.backendBaseUrl;
-      final response = await Uri.parse('$baseurl/user_entry/should_calibrate?roll_number=$rollNumber').resolveUri(Uri());
+      final response = Uri.parse('$baseurl/user_entry/should_calibrate?roll_number=$rollNumber').resolveUri(Uri());
       final httpResponse = await http.get(response);
       if (httpResponse.statusCode == 200) {
         final data = jsonDecode(httpResponse.body);

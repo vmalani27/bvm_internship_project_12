@@ -52,7 +52,7 @@ class MeasurementStepModel extends ChangeNotifier {
       endpoint = '/housing_measurement';
     }
     final url = Uri.parse('${AppConfig.backendBaseUrl}$endpoint');
-    developer.log('Submitting measurements: ' + jsonEncode(body));
+    developer.log('Submitting measurements: ${jsonEncode(body)}');
     try {
       final response = await http.post(
         url,
@@ -175,12 +175,14 @@ class MeasurementStepModel extends ChangeNotifier {
     final step = steps[_currentStep];
     String filename = '';
     if (category == 'shaft') {
-      if (step['field'] == 'shaft_height') filename = 'height of shaft.mkv';
-      else if (step['field'] == 'shaft_radius') filename = 'radius of shaft.mkv';
+      if (step['field'] == 'shaft_height') {
+        filename = 'height of shaft.mkv';
+      } else if (step['field'] == 'shaft_radius') filename = 'radius of shaft.mkv';
       return '${AppConfig.backendBaseUrl}/video/shaft/${Uri.encodeComponent(filename)}';
     } else {
-      if (step['field'] == 'housing_height') filename = 'height of hosuing.mp4';
-      else if (step['field'] == 'housing_radius') filename = 'radius of housing.mp4';
+      if (step['field'] == 'housing_height') {
+        filename = 'height of hosuing.mp4';
+      } else if (step['field'] == 'housing_radius') filename = 'radius of housing.mp4';
       else if (step['field'] == 'housing_depth') filename = 'depth of housing.mp4';
       return '${AppConfig.backendBaseUrl}/video/housing/${Uri.encodeComponent(filename)}';
     }
@@ -194,10 +196,10 @@ class MeasurementStepModel extends ChangeNotifier {
     if (_currentStep < steps.length - 1) {
       _currentStep++;
     } else {
-      _isSummary = true;
+      showSummary();
     }
-    _initializeVideoForStep(); // Re-initialize video for the new step/summary
-    notifyListeners(); // Notify for step change
+    _initializeVideoForStep();
+    notifyListeners();
   }
 
   void prevStep() {
@@ -207,6 +209,21 @@ class MeasurementStepModel extends ChangeNotifier {
       _initializeVideoForStep(); // Re-initialize video for the previous step
       notifyListeners();
     }
+  }
+
+  // Public getter for isSummary
+  bool get isSummaryState => _isSummary;
+
+  // Add setter for isSummary
+  set isSummary(bool value) {
+    _isSummary = value;
+    notifyListeners();
+  }
+
+  // Method to set summary state
+  void showSummary() {
+    _isSummary = true;
+    notifyListeners();
   }
 
   void reset() {

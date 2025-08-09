@@ -6,7 +6,7 @@ import 'measurement_category_page.dart';
 import '../elements/common_elements/common_appbar.dart';
 
 class WelcomePage extends StatefulWidget {
-  const WelcomePage({Key? key}) : super(key: key);
+  const WelcomePage({super.key});
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();

@@ -15,7 +15,7 @@ class MeasurementInputWidget extends StatelessWidget {
   final bool isCaliperChecking;
 
   const MeasurementInputWidget({
-    Key? key,
+    super.key,
     required this.label,
     required this.hint,
     required this.controller,
@@ -26,7 +26,7 @@ class MeasurementInputWidget extends StatelessWidget {
     required this.accent,
     required this.caliperFocusNode,
     required this.isCaliperChecking,
-  }) : super(key: key);
+  });
 
   void _showStepInfoDialog(BuildContext context) {
     String infoText = '';
@@ -72,7 +72,13 @@ class MeasurementInputWidget extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          padding: const EdgeInsets.all(24),
+          // Increase bottom padding to accommodate buttons
+          padding: const EdgeInsets.only(
+            top: 24,
+            left: 24,
+            right: 24,
+            bottom: 80, // Increased from 24 to make room for buttons
+          ),
           decoration: BoxDecoration(
             color: cardBg.withOpacity(0.95),
             borderRadius: BorderRadius.circular(20),
@@ -92,6 +98,7 @@ class MeasurementInputWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Title and info button row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -114,8 +121,9 @@ class MeasurementInputWidget extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
+              // Input field
               TextFormField(
-                key: ValueKey('input_${label}'),
+                key: ValueKey('input_$label'),
                 controller: controller,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: TextStyle(fontSize: 16, color: textColor),
@@ -142,9 +150,21 @@ class MeasurementInputWidget extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
                           )
                         : Icon(Icons.straighten_rounded, color: accent),
-                    onPressed: isCaliperChecking ? null : onCaliperCheckPressed,
+                    onPressed: isCaliperChecking ? null : () {
+                      developer.log('[Widget] Caliper button pressed');
+                      onCaliperCheckPressed();
+                    },
                     tooltip: 'Start caliper measurement',
                   ),
+                  // Temporary test button for debugging
+                  prefixIcon: isCaliperChecking ? IconButton(
+                    icon: Icon(Icons.bug_report, color: Colors.orange),
+                    onPressed: () {
+                      developer.log('[Widget] Test input button pressed');
+                      controller.text = '25.50';
+                    },
+                    tooltip: 'Test caliper input',
+                  ) : null,
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -158,116 +178,132 @@ class MeasurementInputWidget extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (!isLastStep)
-                    Expanded(
-                      child: Container(
-                        height: 48,
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: onBack,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.arrow_back_rounded, size: 20, color: textColor.withOpacity(0.8)),
-                                  const SizedBox(width: 8),
-                                  Text('Back',
-                                      style: TextStyle(
-                                          fontSize: 16, fontWeight: FontWeight.w600, color: textColor.withOpacity(0.8))),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    flex: isLastStep ? 1 : 2,
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            accent,
-                            accent.withOpacity(0.8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accent.withOpacity(0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: onNext,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isLastStep ? 'Review' : 'Next',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  isLastStep ? Icons.check_rounded : Icons.arrow_forward_rounded,
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
-        // This is the hidden TextField that will receive caliper input
+        // Hidden TextField
         Positioned.fill(
           child: Opacity(
             opacity: 0.0,
-            child: AbsorbPointer(
-              absorbing: !isCaliperChecking, // Absorb input unless checking is active
-              child: TextField(
-                controller: controller, // Use the same controller as the visible one
-                focusNode: caliperFocusNode,
-                keyboardType: TextInputType.number,
-                autofocus: false, // Don't autofocus
+            child: TextField(
+              key: const ValueKey('caliper_input_field'),
+              controller: controller, // Use the same controller as the visible one
+              focusNode: caliperFocusNode,
+              keyboardType: TextInputType.number,
+              autofocus: false, // Don't autofocus
+              // Remove AbsorbPointer to ensure input can be received
+            ),
+          ),
+        ),
+        // Adjust button row position
+        Positioned(
+          bottom: 24, // Increased from 16 to match container padding
+          left: 24,
+          right: 24,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              // Add subtle gradient background to separate from content
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  cardBg.withOpacity(0),
+                  cardBg,
+                  cardBg,
+                ],
               ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Back button - fixed icon color and order
+                ElevatedButton.icon(
+                  onPressed: onBack,
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white, // Add explicit color
+                  ),
+                  label: const Text(
+                    'Back',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accent.withOpacity(0.8),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    // Clear button - updated to match button height
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        developer.log('[Input] Clear measurement requested');
+                        controller.clear();
+                      },
+                      icon: const Icon(
+                        Icons.clear,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Clear',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Next/Submit button - reversed icon order
+                    ElevatedButton(
+                      onPressed: onNext,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accent,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isLastStep ? 'Review' : 'Next',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            isLastStep ? Icons.check_rounded : Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

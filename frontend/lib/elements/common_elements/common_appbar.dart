@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 class BvmAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String? title;
-  const BvmAppBar({Key? key, this.title}) : super(key: key);
+  const BvmAppBar({super.key, this.title});
 
   @override
   Size get preferredSize => Size.fromHeight(title == null ? 64 : 104);

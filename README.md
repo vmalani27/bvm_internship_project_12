@@ -81,7 +81,7 @@ CSV files are stored in `backend/logs/`:
 - ✅ Global Material 3 theme with modern color scheme
 - ✅ Complete onboarding workflow with step progress indicator
 - ✅ User entry form with validation and "welcome back" toast
-- ✅ Device connection and calibration steps
+- ✅ Device connection and caliberation steps
 - ✅ Step-by-step measurement workflow with video instructions
 - ✅ Category selection (shaft/housing)
 - ✅ Product ID entry and review summary

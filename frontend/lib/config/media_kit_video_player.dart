@@ -134,7 +134,7 @@ class _MediaKitVideoPlayerState extends State<MediaKitVideoPlayer> {
         controller: widget.videoController!,
         controls: AdaptiveVideoControls,
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
