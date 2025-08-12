@@ -181,17 +181,23 @@ class MeasurementInputWidget extends StatelessWidget {
             ],
           ),
         ),
-        // Hidden TextField
-        Positioned.fill(
-          child: Opacity(
-            opacity: 0.0,
+        // Hidden TextField for caliper input
+        Positioned(
+          // Position off-screen but still active
+          left: -1000,
+          top: -1000,
+          child: SizedBox(
+            height: 0.1,
+            width: 0.1,
             child: TextField(
               key: const ValueKey('caliper_input_field'),
-              controller: controller, // Use the same controller as the visible one
+              controller: controller,
               focusNode: caliperFocusNode,
               keyboardType: TextInputType.number,
-              autofocus: false, // Don't autofocus
-              // Remove AbsorbPointer to ensure input can be received
+              autofocus: false,
+              onChanged: (value) {
+                developer.log('[Caliper] Hidden input received: $value');
+              },
             ),
           ),
         ),
@@ -273,7 +279,21 @@ class MeasurementInputWidget extends StatelessWidget {
                     const SizedBox(width: 16),
                     // Next/Submit button - reversed icon order
                     ElevatedButton(
-                      onPressed: onNext,
+                      onPressed: () {
+                        if (controller.text.isNotEmpty) {  // Only proceed if there's a measurement
+                          developer.log('[Input] Next pressed with value: ${controller.text}');
+                          onNext();  // This calls controller.goNextStep() from the page
+                        } else {
+                          developer.log('[Input] Next pressed but no measurement entered');
+                          // Optionally show a snackbar or validation message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter a measurement before proceeding'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accent,
                         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
