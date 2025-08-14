@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../pages/next_page.dart';
+import '../pages/welcome_page.dart';
 
 // Custom slide up route for NextPage
 Route createSlideUpRoute() {

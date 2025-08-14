@@ -187,66 +187,72 @@ def get_user_entries():
     if not data:
         return {"status": "no records found", "data": []}
     return {"status": "success", "data": data}
-
-@app.get("/user_entry/should_calibrate")
-def should_calibrate(roll_number: str):
+def should_calibrate_helper(roll_number: str) -> bool:
     """
-    Returns a flag should_calibrate: bool indicating if the user should calibrate.
-    If the user is new or last login was more than 24 hours ago, should_calibrate is True.
-    Otherwise, False.
+    Checks if a user should calibrate based on last login.
+    Returns True if user is new or last login > 24 hours ago.
     """
     ensure_user_entry_csv_exists()
     data = read_csv(get_user_entry_path())
+
     if not data:
-        # No users, so new user scenario
-        return {"should_calibrate": True}
+        logging.info("No users in CSV — new user detected")
+        return True
+
     now = datetime.datetime.now()
     for row in data:
         if row["roll_number"] == roll_number:
             last_login_str = row.get("last_login")
             if not last_login_str:
-                return {"should_calibrate": True}
+                logging.info("No last_login found — forcing calibration")
+                return True
             try:
                 last_login = datetime.datetime.fromisoformat(last_login_str)
-            except Exception:
-                return {"should_calibrate": True}
+            except Exception as e:
+                logging.warning(f"Invalid last_login format '{last_login_str}' — {e}")
+                return True
             delta = now - last_login
-            if delta.total_seconds() > 24 * 3600:
-                return {"should_calibrate": True}
-            else:
-                return {"should_calibrate": False}
-    # User not found, new user
-    return {"should_calibrate": True}
+            logging.info(f"Time since last login for {roll_number}: {delta.total_seconds()} seconds")
+            return delta.total_seconds() > 24 * 3600
+
+    logging.info(f"User {roll_number} not found — new user detected")
+    return True
+
+
+@app.get("/user_entry/should_calibrate")
+def should_calibrate_endpoint(roll_number: str):
+    """Endpoint version — just calls the helper."""
+    return {"should_calibrate": should_calibrate_helper(roll_number)}
+
 
 @app.post("/user_entry")
 def add_user_entry(entry: dict = Body(...)):
+    logging.info(f"Received entry: {entry}")
     ensure_user_entry_csv_exists()
+
     for field in ["roll_number", "name"]:
         if field not in entry:
+            logging.error(f"Missing field: {field}")
             raise HTTPException(status_code=400, detail=f"Missing field: {field}")
-    # Check for duplicate roll_number
+
     existing_entries = read_csv(get_user_entry_path())
+    logging.info(f"Existing entries: {existing_entries}")
+
     for row in existing_entries:
         if row["roll_number"] == entry["roll_number"]:
-            # Update last_login for returning user
+            logging.info(f"Found existing user: {row['roll_number']}")
+
+            # Get calibration flag BEFORE updating last_login
+            should_calibrate_flag = should_calibrate_helper(entry["roll_number"])
+
+            # Now update last_login
             row["last_login"] = datetime.datetime.now().isoformat()
             write_csv(get_user_entry_path(), existing_entries, USER_ENTRY_FIELDS)
-            # Determine should_calibrate flag
-            should_calibrate_flag = True
-            last_login_str = row.get("last_login")
-            if last_login_str:
-                try:
-                    last_login = datetime.datetime.fromisoformat(last_login_str)
-                    delta = datetime.datetime.now() - last_login
-                    if delta.total_seconds() <= 24 * 3600:
-                        should_calibrate_flag = False
-                except Exception:
-                    should_calibrate_flag = True
-            else:
-                should_calibrate_flag = True
+            logging.info(f"Updated last_login for user {row['roll_number']}")
+
             return {"status": "welcome_back", "should_calibrate": should_calibrate_flag}
-        # If somehow no return happened above, fall through to return below
-    # New user: add entry
+
+    # New user
     now = datetime.datetime.now().isoformat()
     new_entry = {
         "roll_number": entry["roll_number"],
@@ -256,19 +262,7 @@ def add_user_entry(entry: dict = Body(...)):
         "last_login": now
     }
     append_csv(get_user_entry_path(), [new_entry], USER_ENTRY_FIELDS)
-    # New user should calibrate
-    return {"status": "entry added", "should_calibrate": True}
-    # New user: add entry
-    now = datetime.datetime.now().isoformat()
-    new_entry = {
-        "roll_number": entry["roll_number"],
-        "name": entry["name"],
-        "date": entry.get("date", now[:10]),
-        "time": entry.get("time", now[11:19]),
-        "last_login": now
-    }
-    append_csv(get_user_entry_path(), [new_entry], USER_ENTRY_FIELDS)
-    # New user should calibrate
+    logging.info(f"Added new user: {new_entry}")
     return {"status": "entry added", "should_calibrate": True}
 
 @app.put("/user_entry")

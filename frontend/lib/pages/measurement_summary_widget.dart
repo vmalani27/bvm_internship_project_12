@@ -1,6 +1,13 @@
+import 'dart:math';
+
+import 'package:bvm_manual_inspection_station/pages/measurement_category_page.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/measurement_step_model.dart';
 import '../config/app_theme.dart';
+import '../config/app_config.dart';
+import '../models/user_session.dart'; // Add this import
 
 class MeasurementSummaryWidget extends StatelessWidget {
   final MeasurementStepModel model;
@@ -9,6 +16,47 @@ class MeasurementSummaryWidget extends StatelessWidget {
     Key? key, 
     required this.model
   }) : super(key: key);
+
+  Future<void> _submitMeasurement(BuildContext context) async {
+    final String baseUrl = AppConfig.backendBaseUrl;
+    String endpoint;
+    if (model.category == 'shaft') {
+      endpoint = '/shaft_measurement';
+    } else if (model.category == 'housing') {
+      endpoint = '/housing_measurement';
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unknown category!'))
+      );
+      return;
+    }
+
+    // Create a copy of the measurements and add product_id and roll_number
+    final Map<String, dynamic> payload = Map<String, dynamic>.from(model.measurements);
+    payload['product_id'] = model.productId;
+    payload['roll_number'] = UserSession.rollNumber; // <-- Add roll_number from session
+
+    final response = await http.post(
+      Uri.parse('$baseUrl$endpoint'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Measurement submitted!'))
+      );
+        Navigator.of(context).popUntil((route) =>
+        route.settings.name == null
+          ? route is MaterialPageRoute && (route.settings.arguments is MeasurementCategoryPage)
+          : (route.settings.name == 'measurement_category_page') || (route.settings.name == null && route.isCurrent)
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Submission failed: ${response.body}'))
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +104,17 @@ class MeasurementSummaryWidget extends StatelessWidget {
               ),
             )),
             const SizedBox(height: 28),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.cloud_upload),
+              label: const Text('Submit Measurement'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              onPressed: () => _submitMeasurement(context),
+            ),
+            const SizedBox(height: 12),
             ElevatedButton.icon(
               icon: const Icon(Icons.home),
               label: const Text('Back to Home'),

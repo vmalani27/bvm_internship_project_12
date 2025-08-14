@@ -72,12 +72,11 @@ class MeasurementInputWidget extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          // Increase bottom padding to accommodate buttons
           padding: const EdgeInsets.only(
             top: 24,
             left: 24,
             right: 24,
-            bottom: 80, // Increased from 24 to make room for buttons
+            bottom: 80,
           ),
           decoration: BoxDecoration(
             color: cardBg.withOpacity(0.95),
@@ -98,7 +97,6 @@ class MeasurementInputWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Title and info button row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -121,12 +119,21 @@ class MeasurementInputWidget extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              // Input field
+              // The caliper trigger is now part of the TextFormField itself.
               TextFormField(
                 key: ValueKey('input_$label'),
                 controller: controller,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: TextStyle(fontSize: 16, color: textColor),
+                // Add an onTap callback to the TextFormField.
+                onTap: () {
+                  // This is the new fallback logic:
+                  // Only trigger the caliper if the field is empty.
+                  if (controller.text.isEmpty) {
+                    developer.log('[Widget] TextFormField tapped to trigger caliper');
+                    onCaliperCheckPressed();
+                  }
+                },
                 decoration: InputDecoration(
                   hintText: hint,
                   hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
@@ -150,13 +157,13 @@ class MeasurementInputWidget extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
                           )
                         : Icon(Icons.straighten_rounded, color: accent),
+                    // The dedicated button can still be used to re-trigger a measurement
                     onPressed: isCaliperChecking ? null : () {
                       developer.log('[Widget] Caliper button pressed');
                       onCaliperCheckPressed();
                     },
                     tooltip: 'Start caliper measurement',
                   ),
-                  // Temporary test button for debugging
                   prefixIcon: isCaliperChecking ? IconButton(
                     icon: Icon(Icons.bug_report, color: Colors.orange),
                     onPressed: () {
@@ -183,7 +190,6 @@ class MeasurementInputWidget extends StatelessWidget {
         ),
         // Hidden TextField for caliper input
         Positioned(
-          // Position off-screen but still active
           left: -1000,
           top: -1000,
           child: SizedBox(
@@ -203,13 +209,12 @@ class MeasurementInputWidget extends StatelessWidget {
         ),
         // Adjust button row position
         Positioned(
-          bottom: 24, // Increased from 16 to match container padding
+          bottom: 24,
           left: 24,
           right: 24,
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              // Add subtle gradient background to separate from content
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -223,12 +228,11 @@ class MeasurementInputWidget extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Back button - fixed icon color and order
                 ElevatedButton.icon(
                   onPressed: onBack,
                   icon: const Icon(
                     Icons.arrow_back_rounded,
-                    color: Colors.white, // Add explicit color
+                    color: Colors.white,
                   ),
                   label: const Text(
                     'Back',
@@ -249,7 +253,6 @@ class MeasurementInputWidget extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    // Clear button - updated to match button height
                     ElevatedButton.icon(
                       onPressed: () {
                         developer.log('[Input] Clear measurement requested');
@@ -277,15 +280,13 @@ class MeasurementInputWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Next/Submit button - reversed icon order
                     ElevatedButton(
                       onPressed: () {
-                        if (controller.text.isNotEmpty) {  // Only proceed if there's a measurement
+                        if (controller.text.isNotEmpty) {
                           developer.log('[Input] Next pressed with value: ${controller.text}');
-                          onNext();  // This calls controller.goNextStep() from the page
+                          onNext();
                         } else {
                           developer.log('[Input] Next pressed but no measurement entered');
-                          // Optionally show a snackbar or validation message
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Please enter a measurement before proceeding'),

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:bvm_manual_inspection_station/config/app_config.dart';
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import '../models/user_session.dart';
@@ -18,6 +19,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
   bool isLoading = true;
   Map<String, dynamic>? data;
   String? error;
+
   
   late AnimationController _titleController;
   late AnimationController _contentController;
@@ -59,13 +61,14 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
   }
 
   Future<void> fetchMeasurements() async {
+    final String baseUrl = AppConfig.backendBaseUrl;
     if (userRollNumber == null) return;
     setState(() {
       isLoading = true;
       error = null;
     });
     try {
-      final uri = Uri.parse('http://127.0.0.1:8000/measured_units/$userRollNumber');
+      final uri = Uri.parse('$baseUrl/measured_units/$userRollNumber');
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         data = jsonDecode(response.body);
