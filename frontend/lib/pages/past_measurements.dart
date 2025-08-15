@@ -85,7 +85,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
 
   Widget buildMeasurementCard(String title, List<Map<String, dynamic>> rows, Color accentColor) {
     if (rows.isEmpty) return const SizedBox();
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -104,8 +104,8 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
         ],
       ),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           // Header
           Container(
             padding: const EdgeInsets.all(20),
@@ -168,51 +168,59 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
           ),
           
           // Data table
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-              columnSpacing: 24,
-              horizontalMargin: 20,
-              headingRowColor: WidgetStateProperty.all(Colors.transparent),
-              dataRowColor: WidgetStateProperty.all(Colors.transparent),
-              border: TableBorder(
-                horizontalInside: BorderSide(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              columns: rows.first.keys.map((c) => DataColumn(
-                label: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    c.replaceAll('_', ' ').toUpperCase(),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textDark.withOpacity(0.8),
-                      fontSize: 12,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              )).toList(),
-            rows: rows.map((row) => DataRow(
-                cells: row.values.map((value) => DataCell(
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      value?.toString() ?? '',
-                      style: TextStyle(
-                        color: AppTheme.textDark.withOpacity(0.9),
-                        fontSize: 13,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columnSpacing: 24,
+                    horizontalMargin: 20,
+                    headingRowColor: WidgetStateProperty.all(Colors.transparent),
+                    dataRowColor: WidgetStateProperty.all(Colors.transparent),
+                    border: TableBorder(
+                      horizontalInside: BorderSide(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
                       ),
                     ),
+                    columns: rows.first.keys.map((c) => DataColumn(
+                      label: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          c.replaceAll('_', ' ').toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark.withOpacity(0.8),
+                            fontSize: 12,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    )).toList(),
+                    rows: rows.map((row) => DataRow(
+                      cells: row.values.map((value) => DataCell(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            value?.toString() ?? '',
+                            style: TextStyle(
+                              color: AppTheme.textDark.withOpacity(0.9),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      )).toList(),
+                    )).toList(),
                   ),
-                )).toList(),
-            )).toList(),
-            ),
+                ),
+              ),
+            ],
           ),
         ],
-        ),
+      ),
     );
   }
 

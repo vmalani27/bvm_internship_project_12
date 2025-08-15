@@ -180,6 +180,7 @@ class MeasurementStepController extends ChangeNotifier {
     notifyListeners();
   }
 
+  
   void clearCurrentMeasurement() {
     developer.log('[Controller] Clearing current measurement');
     measurementController.clear();

@@ -30,18 +30,18 @@ class MeasurementInputWidget extends StatelessWidget {
 
   void _showStepInfoDialog(BuildContext context) {
     String infoText = '';
-    if (label.contains('Height')) {
+    if (label.contains('height')) {
       infoText = '''To measure the height:
 1. Extend the depth bar by sliding the movable jaw.
 2. Place the base of the caliper on one end of the object and insert the depth bar until it touches the other end.
 3. Read the measurement from the main and vernier scales.''';
-    } else if (label.contains('Radius')) {
+    } else if (label.contains('radius')) {
       infoText = '''To measure the radius:
 1. Open the Vernier caliper.
 2. Place the inside jaws inside the circular opening.
 3. Gently expand the jaws until they touch the inner walls.
 4. Read the measurement from the main and vernier scales.''';
-    } else if (label.contains('Depth')) {
+    } else if (label.contains('depth')) {
       infoText = '''To measure the depth:
 1. Extend the depth rod by sliding the movable jaw.
 2. Insert the depth rod into the hole or cavity until the base of the caliper rests flat on the surface.

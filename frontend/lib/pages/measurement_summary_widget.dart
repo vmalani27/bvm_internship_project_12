@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:bvm_manual_inspection_station/app.dart';
 import 'package:bvm_manual_inspection_station/pages/measurement_category_page.dart';
+import 'package:bvm_manual_inspection_station/pages/measurement_step_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -46,10 +48,10 @@ class MeasurementSummaryWidget extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Measurement submitted!'))
       );
-        Navigator.of(context).popUntil((route) =>
-        route.settings.name == null
-          ? route is MaterialPageRoute && (route.settings.arguments is MeasurementCategoryPage)
-          : (route.settings.name == 'measurement_category_page') || (route.settings.name == null && route.isCurrent)
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => _NextActionDialog(),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -130,6 +132,62 @@ class MeasurementSummaryWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NextActionDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('What would you like to measure next?'),
+      content: const Text('Choose a product type or log out.'),
+      actions: [
+        ElevatedButton.icon(
+          icon: const Icon(Icons.home_work),
+          label: const Text('Measure Housing'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+          onPressed: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => MeasurementStepPage(
+                  category: 'housing',
+                  model: MeasurementStepModel(category: 'housing'),
+                ),
+              ),
+            );
+          },
+        ),
+        ElevatedButton.icon(
+          icon: const Icon(Icons.settings_input_component),
+          label: const Text('Measure Shaft'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+          onPressed: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => MeasurementStepPage(
+                  category: 'shaft',
+                  model: MeasurementStepModel(category: 'shaft'),
+                ),
+              ),
+            );
+          },
+        ),
+        ElevatedButton.icon(
+          icon: const Icon(Icons.logout),
+          label: const Text('Log Out / Check Out'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+              (route) => false,
+            );
+          },
+        ),
+      ],
     );
   }
 }

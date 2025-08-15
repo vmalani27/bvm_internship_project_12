@@ -354,10 +354,17 @@ def ensure_measured_shafts_csv_exists():
     if not os.path.exists(path):
         from csv_helper import write_csv
         write_csv(path, [], SHAFT_MEASUREMENT_FIELDS)
+    if os.path.getsize(path) == 0:
+        from csv_helper import write_csv
+        write_csv(path, [], SHAFT_MEASUREMENT_FIELDS)
+
 
 def ensure_measured_housings_csv_exists():
     path = get_measured_housings_path()
     if not os.path.exists(path):
+        from csv_helper import write_csv
+        write_csv(path, [], HOUSING_MEASUREMENT_FIELDS)
+    if os.path.getsize(path) == 0:
         from csv_helper import write_csv
         write_csv(path, [], HOUSING_MEASUREMENT_FIELDS)
 
