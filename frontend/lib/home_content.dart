@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:ui'; // Import for ImageFilter
 
-import 'package:bvm_manual_inspection_station/elements/onboarding_screen/adb_device_check_button_archive.dart';
 import 'package:bvm_manual_inspection_station/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
