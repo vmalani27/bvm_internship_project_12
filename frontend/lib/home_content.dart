@@ -56,6 +56,130 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
+  // Add your _buildSteps function here
+  Widget _buildSteps(BuildContext context) {
+    // Define your steps (labels or any other info you want)
+    final List<String> _steps = _shouldCalibrate ? ['1', '2', '3'] : ['1', '2'];
+
+    // Use AppTheme palette
+    const Color stepActive = AppTheme.primary;
+    const Color stepCompleted = AppTheme.secondary;
+    const Color stepInactive = Color(0xFFE0E7EF);
+
+    List<Widget> steps = [];
+
+    for (int i = 0; i < _steps.length; i++) {
+      steps.add(
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ThemedStepCircle(
+              isCompleted: _completedStep > i,
+              isActive: _completedStep == i,
+              label: _steps[i],
+              activeColor: stepActive,
+              completedColor: stepCompleted,
+              inactiveColor: stepInactive,
+            ),
+            if (i < _steps.length - 1) ...[
+              const SizedBox(width: 40),
+              _ThemedStepLine(isActive: _completedStep >= i + 1, color: stepActive),
+              const SizedBox(width: 40),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: steps,
+    );
+  }
+
+  Widget _buildCurrentStepAndroid(BuildContext context) {
+  // Use AppTheme palette
+  const Color stepActive = AppTheme.primary;
+  const Color stepCompleted = AppTheme.secondary;
+  const Color stepInactive = Color(0xFFE0E7EF);
+
+  Widget stepButton;
+  if (_completedStep == 0) {
+    stepButton = MorphingUserEntryButton(
+      enabled: true,
+      onComplete: () {
+        setState(() {
+          _completedStep = 1;
+        });
+      },
+      onShouldCalibrateChanged: (bool value) {
+        setState(() {
+          _shouldCalibrate = value;
+        });
+      },
+      buttonBg: stepActive,
+      buttonFg: Colors.white,
+      buttonBorder: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  } else if (_completedStep == 1) {
+    stepButton = MorphingDeviceConnectedButton(
+      enabled: true,
+      onComplete: () {
+        setState(() {
+          _completedStep = 2;
+        });
+        if (!_shouldCalibrate) {
+          Future.delayed(const Duration(milliseconds: 600), () {
+            Navigator.of(context).push(createSlideUpRoute());
+          });
+        }
+      },
+      buttonBg: stepActive,
+      buttonFg: Colors.white,
+      buttonBorder: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  } else if (_completedStep == 2 && _shouldCalibrate) {
+    stepButton = MorphingCalibrationButton(
+      enabled: true,
+      onComplete: () {
+        setState(() {
+          _completedStep = 3;
+        });
+        Future.delayed(const Duration(milliseconds: 600), () {
+          Navigator.of(context).push(createSlideUpRoute());
+        });
+      },
+      buttonBg: stepActive,
+      buttonFg: Colors.white,
+      buttonBorder: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  } else {
+    stepButton = const SizedBox.shrink();
+  }
+
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _ThemedStepCircle(
+        isCompleted: false,
+        isActive: true,
+        label: (_completedStep + 1).toString(),
+        activeColor: stepActive,
+        completedColor: stepCompleted,
+        inactiveColor: stepInactive,
+      ),
+      const SizedBox(height: 32),
+      stepButton,
+    ],
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     // Use AppTheme palette
@@ -84,6 +208,53 @@ class _HomeContentState extends State<HomeContent> {
       );
     }
 
+
+  if (Theme.of(context).platform == TargetPlatform.android) {
+    // Android: Show only the current step, centered, with same background as Windows
+    return Column(
+      children: [
+        const BvmAppBar(),
+        Expanded(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.bgColor,
+                  AppTheme.bgColor.withOpacity(0.95),
+                  AppTheme.primary.withOpacity(0.05),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                    child: Card(
+                      color: AppTheme.cardBg.withOpacity(0.95),
+                      elevation: 10,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(32, 56, 32, 36),
+                        child: _buildCurrentStepAndroid(context),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  } else {
     return Column(
       children: [
         const BvmAppBar(),
@@ -119,46 +290,8 @@ class _HomeContentState extends State<HomeContent> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Stepper
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Step 1 Circle
-                                _ThemedStepCircle(
-                                  isCompleted: _completedStep > 1,
-                                  isActive: _completedStep == 1,
-                                  label: '1',
-                                  activeColor: stepActive,
-                                  completedColor: stepCompleted,
-                                  inactiveColor: stepInactive,
-                                ),
-                                const SizedBox(width: 40),
-                                _ThemedStepLine(isActive: _completedStep >= 2, color: stepActive),
-                                const SizedBox(width: 40),
-                                // Step 2 Circle
-                                _ThemedStepCircle(
-                                  isCompleted: _completedStep > 2,
-                                  isActive: _completedStep == 2,
-                                  label: '2',
-                                  activeColor: stepActive,
-                                  completedColor: stepCompleted,
-                                  inactiveColor: stepInactive,
-                                ),
-                                if (_shouldCalibrate) ...[
-                                  const SizedBox(width: 40),
-                                  _ThemedStepLine(isActive: _completedStep == 3, color: stepActive),
-                                  const SizedBox(width: 40),
-                                  _ThemedStepCircle(
-                                    isCompleted: _completedStep > 2 && _completedStep == 3,
-                                    isActive: _completedStep == 3,
-                                    label: '3',
-                                    activeColor: stepActive,
-                                    completedColor: stepCompleted,
-                                    inactiveColor: stepInactive,
-                                  ),
-                                ],
-                              ],
-                            ),
+                            // Replace the old stepper Row with your new function
+                            _buildSteps(context),
                             const SizedBox(height: 32),
                             // Steps
                             Row(
@@ -251,7 +384,12 @@ class _HomeContentState extends State<HomeContent> {
       ],
     );
   }
+  }
+
+  
 }
+
+
 
 // Themed step circle for Gemini/ChatGPT look
 class _ThemedStepCircle extends StatelessWidget {

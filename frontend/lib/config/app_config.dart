@@ -4,7 +4,7 @@ import 'package:dotenv/dotenv.dart';
 class AppConfig {
   // URLs for different platforms
   static const String backendBaseUrlWindows = 'http://localhost:5000';
-  static const String backendBaseUrlAndroid = 'https://operating-technician-split-fd.trycloudflare.com';
+  static const String backendBaseUrlAndroid = 'http://172.29.250.34:5000';
 
   // Optional: Production URL if needed
   static const String backendBaseUrlProd = 'https://your-backend-domain.com';
