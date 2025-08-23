@@ -44,6 +44,7 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
     controller = MeasurementStepController(model: widget.model);
     _setupAnimations();
     developer.log('[Init] MeasurementStepPage initialized for ${widget.category}');
+    developer.log('[Init] Is housing category: $_isHousingCategory');
     controller.addListener(() {
       if (mounted) setState(() {});
     });
@@ -201,11 +202,15 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
   }
 
 
+  bool get _isHousingCategory {
+    return widget.category != 'shaft'; // All non-shaft categories are housing types
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color bgColor = AppTheme.bgColor;
     final Color cardBg = AppTheme.cardBg;
-    final Color accent = widget.category == 'housing'
+    final Color accent = _isHousingCategory
         ? AppTheme.primary
         : AppTheme.secondary;
     final Color textColor = AppTheme.textDark;
@@ -362,7 +367,7 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${widget.category == 'housing' ? 'Housing' : 'Shaft'} Measurement',
+                  '${_isHousingCategory ? 'Housing' : 'Shaft'} Measurement',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -408,7 +413,7 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              widget.category == 'housing'
+              _isHousingCategory
                   ? Icons.straighten_rounded
                   : Icons.settings_rounded,
               size: 20,
@@ -507,7 +512,9 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
                           child: Column(
                             children: [
                               Text(
-                                'Enter Product ID',
+                                _isHousingCategory 
+                                  ? 'Enter Housing ID'
+                                  : 'Enter Product ID',
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
@@ -517,7 +524,9 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Please enter the product ID to continue with measurement',
+                                _isHousingCategory
+                                  ? 'Please enter the housing ID to continue with measurement'
+                                  : 'Please enter the product ID to continue with measurement',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 16,
@@ -545,7 +554,9 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
                               style: TextStyle(
                                   fontSize: 18, color: textColor),
                               decoration: InputDecoration(
-                                labelText: 'Product ID',
+                                labelText: _isHousingCategory 
+                                  ? 'Housing ID'
+                                  : 'Product ID',
                                 labelStyle: TextStyle(
                                     color: accent,
                                     fontWeight: FontWeight.w600),
@@ -603,6 +614,8 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
                                     if (_productIdController.text
                                         .trim()
                                         .isNotEmpty) {
+                                      developer.log('[ProductID] Product ID set: ${_productIdController.text.trim()}');
+                                      developer.log('[ProductID] Category: ${widget.category}, Is housing: $_isHousingCategory');
                                       setState(() {
                                         widget.model.productId =
                                             _productIdController.text.trim();

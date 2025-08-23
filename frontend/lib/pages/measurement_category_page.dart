@@ -3,6 +3,7 @@ import 'package:bvm_manual_inspection_station/pages/past_measurements.dart';
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
 import 'measurement_step_page.dart';
+import 'housing_types_page.dart';
 import '../models/measurement_step_model.dart';
 import '../elements/common_elements/common_appbar.dart';
 
@@ -215,10 +216,7 @@ class _MeasurementCategoryPageState extends State<MeasurementCategoryPage> with 
                                               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => MeasurementStepPage(
-                      category: 'housing',
-                      model: MeasurementStepModel(category: 'housing'),
-                    ),
+                    builder: (context) => HousingTypesPage(),
                   ),
                 );
               },

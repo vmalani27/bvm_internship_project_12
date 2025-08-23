@@ -1,15 +1,11 @@
-import 'dart:math';
-
 import 'package:bvm_manual_inspection_station/app.dart';
-import 'package:bvm_manual_inspection_station/pages/measurement_category_page.dart';
 import 'package:bvm_manual_inspection_station/pages/measurement_step_page.dart';
+import 'package:bvm_manual_inspection_station/pages/housing_types_page.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../models/measurement_step_model.dart';
 import '../config/app_theme.dart';
-import '../config/app_config.dart';
-import '../models/user_session.dart'; // Add this import
+import '../services/api_service.dart';
+import '../models/user_session.dart';
 
 class MeasurementSummaryWidget extends StatelessWidget {
   final MeasurementStepModel model;
@@ -20,31 +16,26 @@ class MeasurementSummaryWidget extends StatelessWidget {
   }) : super(key: key);
 
   Future<void> _submitMeasurement(BuildContext context) async {
-    final String baseUrl = AppConfig.backendBaseUrl;
-    String endpoint;
-    if (model.category == 'shaft') {
-      endpoint = '/shaft_measurement';
-    } else if (model.category == 'housing') {
-      endpoint = '/housing_measurement';
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unknown category!'))
-      );
-      return;
+    // Prepare the measurements map for submission
+    final Map<String, String> measurements = Map<String, String>.from(model.measurements);
+    
+    // Add roll number from session
+    measurements['roll_number'] = UserSession.rollNumber ?? '';
+    
+    // Determine housing type for housing categories
+    String? housingType;
+    if (model.category != 'shaft') {
+      housingType = model.category; // This will be 'oval', 'sqaure', 'angular', etc.
     }
 
-    // Create a copy of the measurements and add product_id and roll_number
-    final Map<String, dynamic> payload = Map<String, dynamic>.from(model.measurements);
-    payload['product_id'] = model.productId;
-    payload['roll_number'] = UserSession.rollNumber; // <-- Add roll_number from session
-
-    final response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(payload),
+    final success = await ApiService.submitMeasurement(
+      category: model.category,
+      productId: model.productId ?? '',
+      measurements: measurements,
+      housingType: housingType,
     );
 
-    if (response.statusCode == 200) {
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Measurement submitted!'))
       );
@@ -55,7 +46,7 @@ class MeasurementSummaryWidget extends StatelessWidget {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Submission failed: ${response.body}'))
+        const SnackBar(content: Text('Submission failed. Please try again.'))
       );
     }
   }
@@ -151,10 +142,7 @@ class _NextActionDialog extends StatelessWidget {
             Navigator.of(context).pop();
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => MeasurementStepPage(
-                  category: 'housing',
-                  model: MeasurementStepModel(category: 'housing'),
-                ),
+                builder: (context) => HousingTypesPage(),
               ),
             );
           },

@@ -1,1 +1,2 @@
-product_id,roll_number,housing_height,housing_radius,housing_depth
+product_id,roll_number,housing_type,housing_height,housing_radius,housing_depth
+H001,2024001,angular,25.0,12.0,8.0

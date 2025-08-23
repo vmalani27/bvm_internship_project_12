@@ -1,4 +1,3 @@
-
 import logging
 from fastapi import FastAPI, Request, HTTPException, Response, Body
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -40,6 +39,9 @@ assets_dir = os.path.abspath(os.path.join(current_dir, "assets"))
 VIDEO_DIRS = {
     "housing": os.path.abspath(os.path.join(assets_dir, "housing")),
     "shaft": os.path.abspath(os.path.join(assets_dir, "shaft")),
+    "oval_housing": os.path.abspath(os.path.join(assets_dir, "oval_housing")),
+    "sqaure_housing": os.path.abspath(os.path.join(assets_dir, "sqaure_housing")),
+    "angular_housing": os.path.abspath(os.path.join(assets_dir, "angular_housing")),
 }
 
 # Log the paths for debugging
@@ -105,8 +107,8 @@ async def range_streamer(file_path: str, start: int, end: int):
             yield data
             remaining -= len(data)
 
-@app.get("/video/list/{category}")
-async def list_videos(category: str):
+def get_video_list(category: str):
+    """Helper function to get video list for a category"""
     logger.info(f"Listing videos for category: {category}")
     if category not in VIDEO_DIRS:
         logger.error(f"Category '{category}' not found. Available categories: {list(VIDEO_DIRS.keys())}")
@@ -122,15 +124,42 @@ async def list_videos(category: str):
     try:
         files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
         logger.info(f"Found {len(files)} files: {files}")
-        return JSONResponse(content=files)
+        return files
     except Exception as e:
         logger.error(f"Error listing directory {dir_path}: {e}")
         raise HTTPException(status_code=500, detail="Error listing directory")
 
+@app.get("/video/list/{category}")
+async def list_videos(category: str):
+    files = get_video_list(category)
+    return JSONResponse(content=files)
+
+# List videos for specific housing type (must be BEFORE general video route)
+@app.get("/video/housing_types/{housing_type}")
+async def list_housing_videos(housing_type: str):
+    valid_types = ["oval", "sqaure", "angular"]  # Match actual directory names
+    if housing_type not in valid_types:
+        raise HTTPException(status_code=400, detail="Invalid housing type")
+    
+    category = f"{housing_type}_housing"  # This will create "oval_housing", "sqaure_housing", etc.
+    files = get_video_list(category)
+    return JSONResponse(content=files)
+
 @app.get("/video/{category}/{filename}")
+@app.head("/video/{category}/{filename}")
 async def stream_video(request: Request, category: str, filename: str):
     file_path = get_video_path(category, filename)
     file_size = os.path.getsize(file_path)
+    
+    # For HEAD requests, just return headers without content
+    if request.method == "HEAD":
+        headers = {
+            "Content-Length": str(file_size),
+            "Content-Type": "video/mp4",
+            "Accept-Ranges": "bytes",
+        }
+        return Response(headers=headers)
+    
     range_header = request.headers.get("range")
     if range_header:
         # Example: Range: bytes=0-1023
@@ -311,7 +340,7 @@ def ensure_user_entry_csv_exists():
 
 # Shaft measurement fields and CSV path
 SHAFT_MEASUREMENT_FIELDS = ["product_id", "roll_number", "shaft_height", "shaft_radius"]
-HOUSING_MEASUREMENT_FIELDS = ["product_id", "roll_number", "housing_height", "housing_radius", "housing_depth"]
+HOUSING_MEASUREMENT_FIELDS = ["product_id", "roll_number", "housing_type", "housing_height", "housing_radius", "housing_depth"]
 
 
 def get_measured_shafts_path():
@@ -387,12 +416,26 @@ def add_shaft_measurement(entry: dict = Body(...)):
 @app.post("/housing_measurement")
 def add_housing_measurement(entry: dict = Body(...)):
     """
-    Add a new housing measurement. Expects a JSON body with product_id, roll_number, housing_height, housing_radius, housing_depth.
+    Add a new housing measurement. Expects a JSON body with product_id, roll_number, housing_type, housing_height, housing_radius.
+    housing_depth is optional and will default to housing_height if not provided.
     """
     ensure_measured_housings_csv_exists()
-    for field in HOUSING_MEASUREMENT_FIELDS:
+    
+    # Required fields (housing_depth is optional)
+    required_fields = ["product_id", "roll_number", "housing_type", "housing_height", "housing_radius"]
+    for field in required_fields:
         if field not in entry:
             raise HTTPException(status_code=400, detail=f"Missing field: {field}")
+    
+    # Set housing_depth to housing_height if not provided
+    if "housing_depth" not in entry:
+        entry["housing_depth"] = entry["housing_height"]
+    
+    # Validate housing_type value
+    valid_housing_types = ["housing", "oval", "sqaure", "angular"]
+    if entry["housing_type"] not in valid_housing_types:
+        raise HTTPException(status_code=400, detail="Invalid housing type")
+    
     from csv_helper import append_csv
     append_csv(get_measured_housings_path(), [entry], HOUSING_MEASUREMENT_FIELDS)
     return {"status": "housing measurement added"}
@@ -440,6 +483,15 @@ def delete_shaft_measurements():
 @app.delete("/clear_measured_shafts")
 def clear_measured_shafts_endpoint():
     return clear_measured_shafts_csv()
+
+# Get available housing types
+@app.get("/housing_types")
+def get_housing_types():
+    return {
+        "housing_types": [ "oval", "sqaure", "angular"],
+    }
+
+
 
 if __name__ == "__main__":
     import uvicorn

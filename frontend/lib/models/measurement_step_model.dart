@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import '../config/app_config.dart';
-// import '../models/user_session.dart';
+import '../services/api_service.dart';
 import 'dart:developer' as developer;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -46,11 +46,15 @@ class MeasurementStepModel extends ChangeNotifier {
     if (roll != null && roll.isNotEmpty) body['roll_number'] = roll;
     // Do NOT include 'name' in the payload for measurement submission
     if (productIdValue != null && productIdValue.isNotEmpty) body['product_id'] = productIdValue;
+    
     if (category == 'shaft') {
       endpoint = '/shaft_measurement';
     } else {
       endpoint = '/housing_measurement';
+      // For housing measurements, include the housing_type
+      body['housing_type'] = category; // This will be 'oval', 'sqaure', 'angular', etc.
     }
+    
     final url = Uri.parse('${AppConfig.backendBaseUrl}$endpoint');
     developer.log('Submitting measurements: ${jsonEncode(body)}');
     try {
@@ -74,34 +78,29 @@ class MeasurementStepModel extends ChangeNotifier {
           'label': 'Measure the height of the shaft',
           'icon': Icons.height,
           'field': 'shaft_height',
-          'hint': 'Enter shaft height (mm)',
+          'hint': 'To measure the height, extend the depth bar, place the base on one end, and insert the depth bar until it touches the other end. Read the value from the scale.',
         },
         {
           'label': 'Measure the radius of the shaft',
           'icon': Icons.radio_button_checked,
           'field': 'shaft_radius',
-          'hint': 'Enter shaft radius (mm)',
+          'hint': 'To measure the radius, close the jaws around the shaft. Make sure the jaws are aligned and read the measurement from the scale.',
         },
       ];
     } else {
+      // Housing types now have only 2 steps: height and radius
       return [
         {
           'label': 'Measure the height of the housing',
           'icon': Icons.height,
           'field': 'housing_height',
-          'hint': 'Enter housing height (mm)',
+          'hint': 'To measure the height, extend the depth bar, place the base on one end, and insert the depth bar until it touches the other end. Read the value from the scale.',
         },
         {
           'label': 'Measure the radius of the housing',
           'icon': Icons.radio_button_checked,
           'field': 'housing_radius',
-          'hint': 'Enter housing radius (mm)',
-        },
-        {
-          'label': 'Measure the depth of the housing',
-          'icon': Icons.vertical_align_bottom,
-          'field': 'housing_depth',
-          'hint': 'Enter housing depth (mm)',
+          'hint': 'To measure the radius, close the jaws around the housing. Make sure the jaws are aligned and read the measurement from the scale.',
         },
       ];
     }
@@ -146,6 +145,39 @@ class MeasurementStepModel extends ChangeNotifier {
         return;
       }
 
+      // Check if video exists before trying to load it
+      final step = steps[_currentStep];
+      String filename = '';
+      String videoCategory = '';
+      
+      if (category == 'shaft') {
+        videoCategory = 'shaft';
+        if (step['field'] == 'shaft_height') {
+          filename = 'height of shaft.mkv'; // Match actual file in backend
+        } else if (step['field'] == 'shaft_radius') {
+          filename = 'radius of shaft.mkv'; // Match actual file in backend
+        }
+      } else {
+        videoCategory = '${category}_housing';
+        if (step['field'] == 'housing_height') {
+          if (category == 'sqaure') {
+            filename = 'square_housing_depth.mkv'; // This file has correct spelling
+          } else {
+            filename = '${category}_housing_depth.mkv'; // For oval and angular
+          }
+        } else if (step['field'] == 'housing_radius') {
+          filename = '${category}_housing_radius.mkv'; // This follows the directory naming
+        }
+      }
+
+      final videoExists = await ApiService.checkVideoExists(videoCategory, filename);
+      if (!videoExists) {
+        developer.log('Video does not exist: $filename in $videoCategory');
+        _isVideoLoading = false;
+        notifyListeners();
+        return;
+      }
+
       developer.log('Creating media_kit Player');
       // Initialize media_kit Player
       _player = Player();
@@ -174,17 +206,29 @@ class MeasurementStepModel extends ChangeNotifier {
     }
     final step = steps[_currentStep];
     String filename = '';
+    
     if (category == 'shaft') {
       if (step['field'] == 'shaft_height') {
-        filename = 'height of shaft.mkv';
-      } else if (step['field'] == 'shaft_radius') filename = 'radius of shaft.mkv';
-      return '${AppConfig.backendBaseUrl}/video/shaft/${Uri.encodeComponent(filename)}';
+        filename = 'height of shaft.mkv'; // Match actual file in backend
+      } else if (step['field'] == 'shaft_radius') {
+        filename = 'radius of shaft.mkv'; // Match actual file in backend
+      }
+      return ApiService.getVideoUrl('shaft', filename);
     } else {
+      // For housing types (oval, sqaure, angular), use the housing type category
+      String videoCategory = '${category}_housing';
+      
       if (step['field'] == 'housing_height') {
-        filename = 'height of hosuing.mp4';
-      } else if (step['field'] == 'housing_radius') filename = 'radius of housing.mp4';
-      else if (step['field'] == 'housing_depth') filename = 'depth of housing.mp4';
-      return '${AppConfig.backendBaseUrl}/video/housing/${Uri.encodeComponent(filename)}';
+        if (category == 'sqaure') {
+          filename = 'square_housing_depth.mkv'; // This file has correct spelling
+        } else {
+          filename = '${category}_housing_depth.mkv'; // For oval and angular
+        }
+      } else if (step['field'] == 'housing_radius') {
+        filename = '${category}_housing_radius.mkv'; // This follows the directory naming
+      }
+      
+      return ApiService.getVideoUrl(videoCategory, filename);
     }
   }
 
