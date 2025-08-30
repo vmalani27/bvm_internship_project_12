@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Timer
 import '../../common_elements/common_flushbar.dart';
+import '../../../config/app_theme.dart';
 // A simple class to hold calibration results for each step
 class CalibrationResult {
   final double target;
@@ -115,9 +116,9 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
       // ignore: avoid_print
       print('Calibration Dialog - Invalid measurement received: "$dimensionString"');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Invalid input from caliper. Please ensure it\'s a number.'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppTheme.warning,
         ),
       );
     }
@@ -127,9 +128,9 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
   void _nextStep() {
     if (_currentCaliperInput == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please take a measurement with the caliper first.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppTheme.error,
         ),
       );
       return;
@@ -168,6 +169,8 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
 
   // Called when the user tries to close the dialog prematurely
   Future<bool> _onWillPop() async {
+    if (!mounted) return true; // If widget is disposed, allow pop
+    
     if (_currentStepIndex < _calibrationSteps.length) {
       // Calibration not complete, show confirmation dialog
       final bool? confirmExit = await showDialog<bool>(
@@ -206,13 +209,17 @@ class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
     bool calibrationComplete = _currentStepIndex >= _calibrationSteps.length;
     double targetMeasurement = calibrationComplete ? 0.0 : _calibrationSteps[_currentStepIndex];
 
-    return PopScope( // Use PopScope for Android back button
-      canPop: false, // Prevent popping directly
+    return PopScope(
+      canPop: calibrationComplete, // Allow pop only when calibration is complete
       onPopInvoked: (didPop) async {
-        if (didPop) return; // If system pop already handled, do nothing
-        final bool shouldPop = await _onWillPop();
-        if (shouldPop == true) {
-          Navigator.of(context).pop(false); // Indicate calibration was cancelled
+        if (didPop) return; // If already popped, do nothing
+        
+        // Only show confirmation if calibration is not complete
+        if (_currentStepIndex < _calibrationSteps.length) {
+          final bool shouldPop = await _onWillPop();
+          if (shouldPop && context.mounted) {
+            Navigator.of(context).pop(false); // Indicate calibration was cancelled
+          }
         }
       },
       child: AlertDialog(

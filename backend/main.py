@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 from csv_helper import read_csv, write_csv, append_csv, csv_to_dict
 import datetime
+import csv
+import time
 
 
 logging.basicConfig(level=logging.INFO)
@@ -397,6 +399,41 @@ def ensure_measured_housings_csv_exists():
         from csv_helper import write_csv
         write_csv(path, [], HOUSING_MEASUREMENT_FIELDS)
 
+# ---------------------------------------------------------------------------
+# Product ID existence helpers & endpoint
+# ---------------------------------------------------------------------------
+def product_id_exists(product_id: str, measurement_type: str) -> bool:
+    """Return True if a product_id already exists in the specified measurement CSV.
+
+    measurement_type: 'shaft' or 'housing'
+    """
+    product_id = str(product_id).strip()
+    if measurement_type == 'shaft':
+        ensure_measured_shafts_csv_exists()
+        rows = read_csv(get_measured_shafts_path())
+    elif measurement_type == 'housing':
+        ensure_measured_housings_csv_exists()
+        rows = read_csv(get_measured_housings_path())
+    else:
+        raise HTTPException(status_code=400, detail="measurement_type must be 'shaft' or 'housing'")
+    return any(str(r.get('product_id', '')).strip() == product_id for r in rows)
+
+@app.get("/product_exists")
+def product_exists_endpoint(product_id: str, measurement_type: str):
+    """Check if a product_id exists for a given measurement type.
+
+    Query Parameters:
+      - product_id: ID to look for
+      - measurement_type: 'shaft' or 'housing'
+    Response: {"measurement_type": str, "product_id": str, "exists": bool}
+    """
+    exists = product_id_exists(product_id, measurement_type)
+    return {
+        "measurement_type": measurement_type,
+        "product_id": product_id,
+        "exists": exists
+    }
+
 
 # Shaft measurement endpoint
 @app.post("/shaft_measurement")
@@ -408,9 +445,13 @@ def add_shaft_measurement(entry: dict = Body(...)):
     for field in SHAFT_MEASUREMENT_FIELDS:
         if field not in entry:
             raise HTTPException(status_code=400, detail=f"Missing field: {field}")
+    # Enforce unique product_id per shaft dataset
+    pid = str(entry.get('product_id')).strip()
+    if product_id_exists(pid, 'shaft'):
+        raise HTTPException(status_code=409, detail="product_id already exists for shaft measurements")
     from csv_helper import append_csv
     append_csv(get_measured_shafts_path(), [entry], SHAFT_MEASUREMENT_FIELDS)
-    return {"status": "shaft measurement added"}
+    return {"status": "shaft measurement added", "product_id": pid}
 
 # Housing measurement endpoint
 @app.post("/housing_measurement")
@@ -436,9 +477,13 @@ def add_housing_measurement(entry: dict = Body(...)):
     if entry["housing_type"] not in valid_housing_types:
         raise HTTPException(status_code=400, detail="Invalid housing type")
     
+    # Enforce unique product_id per housing dataset
+    pid = str(entry.get('product_id')).strip()
+    if product_id_exists(pid, 'housing'):
+        raise HTTPException(status_code=409, detail="product_id already exists for housing measurements")
     from csv_helper import append_csv
     append_csv(get_measured_housings_path(), [entry], HOUSING_MEASUREMENT_FIELDS)
-    return {"status": "housing measurement added"}
+    return {"status": "housing measurement added", "product_id": pid}
 
 @app.get("/shaft_measurement")
 def get_shaft_measurements():
@@ -491,6 +536,41 @@ def get_housing_types():
         "housing_types": [ "oval", "sqaure", "angular"],
     }
 
+@app.post("/clear_shaft_csv")
+async def clear_shaft_csv():
+    """Clear all shaft measurement data"""
+    try:
+        shaft_path = get_measured_shafts_path()
+        with open(shaft_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(SHAFT_MEASUREMENT_FIELDS)
+        return {"status": "shaft CSV cleared", "timestamp": time.time()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing shaft CSV: {str(e)}")
+
+@app.post("/clear_housing_csv")
+async def clear_housing_csv():
+    """Clear all housing measurement data"""
+    try:
+        housing_path = get_measured_housings_path()
+        with open(housing_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(HOUSING_MEASUREMENT_FIELDS)
+        return {"status": "housing CSV cleared", "timestamp": time.time()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing housing CSV: {str(e)}")
+
+@app.post("/clear_user_entry_csv")
+async def clear_user_entry_csv():
+    """Clear all user entry data"""
+    try:
+        user_entry_path = get_user_entry_path()
+        with open(user_entry_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(USER_ENTRY_FIELDS)
+        return {"status": "user entry CSV cleared", "timestamp": time.time()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing user entry CSV: {str(e)}")
 
 
 if __name__ == "__main__":

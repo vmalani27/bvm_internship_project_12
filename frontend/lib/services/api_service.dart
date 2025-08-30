@@ -171,6 +171,30 @@ class ApiService {
     return url;
   }
 
+  /// Check if a product ID already exists for given measurement type (shaft / housing)
+  static Future<bool> productExists({required String productId, required String measurementType}) async {
+    try {
+      final uri = Uri.parse('${AppConfig.backendBaseUrl}/product_exists')
+          .replace(queryParameters: {
+        'product_id': productId,
+        'measurement_type': measurementType,
+      });
+      developer.log('[API] Checking product existence: $productId ($measurementType)');
+      final response = await http.get(uri).timeout(_timeout);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final exists = data['exists'] == true;
+        developer.log('[API] Product existence result: exists=$exists');
+        return exists;
+      }
+      developer.log('[API] Product existence check failed: ${response.statusCode}');
+      return false; // treat as non-existing on error to allow progress, caller can handle differently
+    } catch (e) {
+      developer.log('[API] Exception in productExists: $e');
+      return false;
+    }
+  }
+
   /// Check if a video exists before trying to load it
   static Future<bool> checkVideoExists(String category, String filename) async {
     try {

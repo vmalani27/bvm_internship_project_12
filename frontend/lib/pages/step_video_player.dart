@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import '../config/app_theme.dart';
 import 'dart:developer' as developer;
 
 class StepVideoPlayer extends StatefulWidget {
@@ -96,7 +97,7 @@ class _StepVideoPlayerState extends State<StepVideoPlayer> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Icon(Icons.error_outline, size: 48, color: AppTheme.error),
                   const SizedBox(height: 8),
                   Text(
                     'Error loading video: ${snapshot.error}',
@@ -150,8 +151,8 @@ class _StepVideoPlayerState extends State<StepVideoPlayer> {
                         child: VideoProgressIndicator(
                           widget.controller!,
                           allowScrubbing: true,
-                          colors: const VideoProgressColors(
-                            playedColor: Colors.blue,
+                          colors: VideoProgressColors(
+                            playedColor: AppTheme.primary,
                             bufferedColor: Colors.grey,
                             backgroundColor: Colors.white24,
                           ),

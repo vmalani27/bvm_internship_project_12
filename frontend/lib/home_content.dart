@@ -6,7 +6,7 @@ import 'package:bvm_manual_inspection_station/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'elements/onboarding_screen/morphing_user_entry_button.dart';
-import 'elements/onboarding_screen/morphing_device_connected_button.dart';
+import 'elements/onboarding_screen/morphing_device_connected_button.dart'; // IMPORTED: Device check button
 import 'elements/onboarding_screen/morphing_calibration_button.dart';
 import 'config/app_theme.dart';
 import 'elements/common_elements/common_appbar.dart';

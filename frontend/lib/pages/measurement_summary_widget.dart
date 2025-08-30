@@ -62,7 +62,7 @@ class MeasurementSummaryWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 48),
+            const Icon(Icons.check_circle, color: AppTheme.success, size: 48),
             const SizedBox(height: 16),
             Text(
               'Review Your Measurements', 
@@ -73,35 +73,49 @@ class MeasurementSummaryWidget extends StatelessWidget {
               )
             ),
             const SizedBox(height: 18),
-            ...model.steps.map((step) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    step['label'], 
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textDark,
-                    )
+            SingleChildScrollView(
+              child: Column(
+                children: model.steps.map((step) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          step['label'], 
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.textDark,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          model.measurements[step['field']] ?? '-',
+                          style: TextStyle(
+                            fontSize: 16, 
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textBody,
+                          ),
+                          textAlign: TextAlign.end,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    model.measurements[step['field']] ?? '-',
-                    style: TextStyle(
-                      fontSize: 16, 
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textBody,
-                    )
-                  ),
-                ],
+                )).toList(),
               ),
-            )),
+            ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
               icon: const Icon(Icons.cloud_upload),
               label: const Text('Submit Measurement'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -112,7 +126,7 @@ class MeasurementSummaryWidget extends StatelessWidget {
               icon: const Icon(Icons.home),
               label: const Text('Back to Home'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: AppTheme.secondary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -131,13 +145,43 @@ class _NextActionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('What would you like to measure next?'),
-      content: const Text('Choose a product type or log out.'),
+      backgroundColor: AppTheme.cardBg,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.check_circle, color: AppTheme.success, size: 24),
+              SizedBox(width: 8),
+              Text('Measurement submitted successfully!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.success)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'What would you like to measure next?',
+            style: TextStyle(color: AppTheme.textDark),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Choose a product type or log out.',
+            style: TextStyle(color: AppTheme.textBody),
+          ),
+        ],
+      ),
       actions: [
         ElevatedButton.icon(
           icon: const Icon(Icons.home_work),
           label: const Text('Measure Housing'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primary,
+            foregroundColor: Colors.white,
+          ),
           onPressed: () {
             Navigator.of(context).pop();
             Navigator.of(context).pushReplacement(
@@ -150,7 +194,10 @@ class _NextActionDialog extends StatelessWidget {
         ElevatedButton.icon(
           icon: const Icon(Icons.settings_input_component),
           label: const Text('Measure Shaft'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.info,
+            foregroundColor: Colors.white,
+          ),
           onPressed: () {
             Navigator.of(context).pop();
             Navigator.of(context).pushReplacement(
@@ -166,7 +213,10 @@ class _NextActionDialog extends StatelessWidget {
         ElevatedButton.icon(
           icon: const Icon(Icons.logout),
           label: const Text('Log Out / Check Out'),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.error,
+            foregroundColor: Colors.white,
+          ),
           onPressed: () {
             Navigator.of(context).pop();
             Navigator.of(context).pushAndRemoveUntil(

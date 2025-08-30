@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:bvm_manual_inspection_station/elements/common_elements/common_flushbar.dart';
 import 'package:bvm_manual_inspection_station/config/app_config.dart';
+import 'package:bvm_manual_inspection_station/config/app_theme.dart';
 // import 'package:bvm_manual_inspection_station/config/user_session.dart';
 import 'dart:convert';
 
@@ -34,8 +35,9 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _rollNumberController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final FocusNode _rollNumberFocusNode = FocusNode();
+  final FocusNode _nameFocusNode = FocusNode();
   bool _showSubmit = false;
-
 
 // void showFlushBar(BuildContext context, String message) {
 //   Flushbar(  
@@ -64,6 +66,12 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
     // Logging: Step 1 form closed/cancelled
     // ignore: avoid_print
     print('[LOG] Step 1: User Entry form closed/cancelled');
+    
+    // Unfocus any active text fields to prevent keyboard event conflicts
+    _rollNumberFocusNode.unfocus();
+    _nameFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+    
     setState(() {
       _expanded = false;
     });
@@ -143,6 +151,8 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   void dispose() {
     _rollNumberController.dispose();
     _nameController.dispose();
+    _rollNumberFocusNode.dispose();
+    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -154,7 +164,7 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
       width: _expanded ? 340 : 160,
       height: _expanded ? 270 : 60,
       decoration: BoxDecoration(
-        color: _expanded ? const Color(0xFFF7FAFC) : widget.buttonBg,
+        color: _expanded ? AppTheme.cardBg : widget.buttonBg,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -164,7 +174,7 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
           ),
         ],
         border: Border.all(
-          color: _expanded ? const Color(0xFFb6c1d1) : widget.buttonFg.withOpacity(0.18),
+          color: _expanded ? AppTheme.primary.withOpacity(0.3) : widget.buttonFg.withOpacity(0.18),
           width: 1.2,
         ),
       ),
@@ -173,12 +183,25 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
         switchInCurve: Curves.easeIn,
         switchOutCurve: Curves.easeOut,
         child: _expanded
-            ? Padding(
+            ? PopScope(
                 key: const ValueKey('form'),
-                padding: const EdgeInsets.all(20.0),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: _formKey,
+                canPop: true,
+                onPopInvoked: (didPop) {
+                  if (didPop) {
+                    // If system already handled the pop, clean up focus
+                    _rollNumberFocusNode.unfocus();
+                    _nameFocusNode.unfocus();
+                    FocusScope.of(context).unfocus();
+                    setState(() {
+                      _expanded = false;
+                    });
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -188,7 +211,7 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF2d3a4a),
+                            color: AppTheme.textDark,
                             letterSpacing: 0.5,
                           ),
                           textAlign: TextAlign.center,
@@ -196,44 +219,52 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                         const SizedBox(height: 18),
                         TextFormField(
                           controller: _rollNumberController,
-                          style: TextStyle(color: Color(0xFF2d3a4a), fontSize: 16),
+                          focusNode: _rollNumberFocusNode,
+                          style: TextStyle(color: AppTheme.textDark, fontSize: 16),
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.badge, color: Color(0xFF1976D2)),
+                            prefixIcon: Icon(Icons.badge, color: AppTheme.primary),
                             labelText: 'Roll Number',
-                            labelStyle: TextStyle(color: Color(0xFF1976D2)),
+                            labelStyle: TextStyle(color: AppTheme.primary),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.85),
+                            fillColor: AppTheme.bgColor.withOpacity(0.8),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Color(0xFFb6c1d1)),
+                              borderSide: BorderSide(color: AppTheme.primary.withOpacity(0.3)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Color(0xFF1976D2), width: 2),
+                              borderSide: BorderSide(color: AppTheme.primary, width: 2),
                             ),
                           ),
                           validator: (value) => value == null || value.isEmpty ? 'Enter your roll number' : null,
+                          onFieldSubmitted: (_) => _nameFocusNode.requestFocus(),
                         ),
                         const SizedBox(height: 14),
                         TextFormField(
                           controller: _nameController,
-                          style: TextStyle(color: Color(0xFF2d3a4a), fontSize: 16),
+                          focusNode: _nameFocusNode,
+                          style: TextStyle(color: AppTheme.textDark, fontSize: 16),
                           decoration: InputDecoration(
-                            prefixIcon: Icon(Icons.person, color: Color(0xFF388E3C)),
+                            prefixIcon: Icon(Icons.person, color: AppTheme.secondary),
                             labelText: 'Name',
-                            labelStyle: TextStyle(color: Color(0xFF388E3C)),
+                            labelStyle: TextStyle(color: AppTheme.secondary),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.85),
+                            fillColor: AppTheme.bgColor.withOpacity(0.8),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Color(0xFFb6c1d1)),
+                              borderSide: BorderSide(color: AppTheme.secondary.withOpacity(0.3)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide(color: Color(0xFF388E3C), width: 2),
+                              borderSide: BorderSide(color: AppTheme.secondary, width: 2),
                             ),
                           ),
                           validator: (value) => value == null || value.isEmpty ? 'Enter your name' : null,
+                          onFieldSubmitted: (_) {
+                            if (_showSubmit) {
+                              _submitForm();
+                            }
+                          },
                         ),
                         const SizedBox(height: 22),
                         Row(
@@ -241,8 +272,8 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                           children: [
                             OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Color(0xFF2d3a4a),
-                                side: BorderSide(color: Color(0xFFb6c1d1)),
+                                foregroundColor: AppTheme.textDark,
+                                side: BorderSide(color: AppTheme.primary.withOpacity(0.3)),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -253,7 +284,7 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                             if (_showSubmit)
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color(0xFF1976D2),
+                                  backgroundColor: AppTheme.primary,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                                   textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -271,7 +302,8 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
                     ),
                   ),
                 ),
-              )
+              ),
+            )
             : Material(
                 key: const ValueKey('button'),
                 color: Colors.transparent,

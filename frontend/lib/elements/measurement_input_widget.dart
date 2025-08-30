@@ -52,12 +52,13 @@ class MeasurementInputWidget extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Measurement Info'),
-        content: Text(infoText),
+        backgroundColor: AppTheme.cardBg,
+        title: Text('Measurement Info', style: TextStyle(color: AppTheme.textDark)),
+        content: Text(infoText, style: TextStyle(color: AppTheme.textDark)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text('Close', style: TextStyle(color: AppTheme.primary)),
           ),
         ],
       ),

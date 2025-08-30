@@ -1,6 +1,7 @@
 import 'package:bvm_manual_inspection_station/elements/onboarding_screen/dialogboxes/caliper_calibration_dialog.dart';
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Future.delayed
+import '../../config/app_theme.dart';
 
 class MorphingCalibrationButton extends StatefulWidget {
   final bool enabled;
@@ -76,13 +77,14 @@ class _MorphingCalibrationButtonState extends State<MorphingCalibrationButton> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Calibration Required'),
-          content: const Text(
+          backgroundColor: AppTheme.cardBg,
+          title: Text('Calibration Required', style: TextStyle(color: AppTheme.textDark)),
+          content: Text(
               'Calibration was not completed. Please retry calibration to ensure '
-              'accurate measurements.'),
+              'accurate measurements.', style: TextStyle(color: AppTheme.textDark)),
           actions: <Widget>[
             TextButton(
-              child: const Text('OK'),
+              child: Text('OK', style: TextStyle(color: AppTheme.primary)),
               onPressed: () {
                 Navigator.of(context).pop(); // Dismiss this dialog
               },

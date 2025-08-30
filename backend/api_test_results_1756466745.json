@@ -1,0 +1,241 @@
+{
+  "summary": {
+    "total_tests": 33,
+    "passed_tests": 25,
+    "failed_tests": 8,
+    "success_rate": "75.8%"
+  },
+  "detailed_results": [
+    {
+      "endpoint": "/",
+      "test_case": "Root endpoint check",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:44"
+    },
+    {
+      "endpoint": "/housing_types",
+      "test_case": "Get housing types",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:44"
+    },
+    {
+      "endpoint": "/video/list/housing",
+      "test_case": "List videos for housing",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:44"
+    },
+    {
+      "endpoint": "/video/list/shaft",
+      "test_case": "List videos for shaft",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:44"
+    },
+    {
+      "endpoint": "/video/list/oval_housing",
+      "test_case": "List videos for oval_housing",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/list/sqaure_housing",
+      "test_case": "List videos for sqaure_housing",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/list/angular_housing",
+      "test_case": "List videos for angular_housing",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/list/invalid",
+      "test_case": "Invalid category",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/housing_types/oval",
+      "test_case": "Housing type videos",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/housing_types/sqaure",
+      "test_case": "Housing type videos",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/housing_types/angular",
+      "test_case": "Housing type videos",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/housing_types/invalid",
+      "test_case": "Invalid housing type",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/product_exists",
+      "test_case": "Non-existent shaft product",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/product_exists",
+      "test_case": "Non-existent housing product",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/product_exists",
+      "test_case": "Missing parameters",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/product_exists",
+      "test_case": "Invalid measurement type",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/shaft_measurement",
+      "test_case": "Valid shaft measurement",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 409, 'response': {'detail': 'product_id already exists for shaft measurements'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/shaft_measurement",
+      "test_case": "Duplicate product ID",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/shaft_measurement",
+      "test_case": "Missing required fields",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Valid housing measurement",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 409, 'response': {'detail': 'product_id already exists for housing measurements'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Valid oval measurement",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 409, 'response': {'detail': 'product_id already exists for housing measurements'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Valid sqaure measurement",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 409, 'response': {'detail': 'product_id already exists for housing measurements'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Valid angular measurement",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 409, 'response': {'detail': 'product_id already exists for housing measurements'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Duplicate product ID",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Invalid housing type",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/housing_measurement",
+      "test_case": "Missing housing_type field",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/measured_units/{roll_number}",
+      "test_case": "Get existing measurements",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/measured_units/{roll_number}",
+      "test_case": "Non-existent roll number",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/clear_shaft_csv",
+      "test_case": "Clear shaft CSV",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 404, 'response': {'detail': 'Not Found'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/clear_housing_csv",
+      "test_case": "Clear housing CSV",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 404, 'response': {'detail': 'Not Found'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/clear_user_entry_csv",
+      "test_case": "Clear user entry CSV",
+      "status": "FAIL",
+      "details": "Unexpected response: {'status_code': 404, 'response': {'detail': 'Not Found'}, 'success': False}",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/{category}/{filename}",
+      "test_case": "HEAD request",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    },
+    {
+      "endpoint": "/video/{category}/{filename}",
+      "test_case": "Invalid category",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2025-08-29 16:55:45"
+    }
+  ]
+}

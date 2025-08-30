@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Common color palette for the app
+// Soft, eye-friendly color palette for the app
 class AppTheme {
   static ThemeData get themeData => ThemeData(
         brightness: Brightness.dark,
@@ -22,12 +22,19 @@ class AppTheme {
           titleLarge: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Inter'),
         ),
       );
-  // Modern dark theme palette
-  static const Color bgColor = Color(0xFF181A20);         // Deep dark background
-  static const Color cardBg = Color(0xFF23262F);          // Slightly lighter card background
-  static const Color accent = Color(0xFF7C3AED);          // Vibrant purple accent
-  static const Color primary = Color(0xFF2563EB);         // Bright blue for primary actions
-  static const Color secondary = Color(0xFF10B981);       // Teal/green for secondary actions
-  static const Color textDark = Color(0xFFF1F5F9);        // Near-white for headings
-  static const Color textBody = Color(0xFFCBD5E1);        // Soft gray for body text
+  
+  // Soft, eye-friendly dark theme palette
+  static const Color bgColor = Color(0xFF1A1D23);         // Warmer dark background
+  static const Color cardBg = Color(0xFF252831);          // Softer card background
+  static const Color accent = Color(0xFF8B6FC7);          // Muted lavender accent
+  static const Color primary = Color(0xFF5B8FE3);         // Soft blue for primary actions
+  static const Color secondary = Color(0xFF7FB069);       // Gentle sage green for secondary actions
+  static const Color textDark = Color(0xFFE8E9ED);        // Soft white for headings
+  static const Color textBody = Color(0xFFB8BCC8);        // Gentle gray for body text
+  
+  // Additional soft colors for buttons and UI elements
+  static const Color success = Color(0xFF68B984);         // Soft success green
+  static const Color warning = Color(0xFFE4B55A);         // Warm amber warning
+  static const Color error = Color(0xFFE07A7A);           // Soft error red
+  static const Color info = Color(0xFF6BA3E0);            // Gentle info blue
 }

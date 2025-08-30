@@ -153,9 +153,9 @@ class MeasurementStepModel extends ChangeNotifier {
       if (category == 'shaft') {
         videoCategory = 'shaft';
         if (step['field'] == 'shaft_height') {
-          filename = 'height of shaft.mkv'; // Match actual file in backend
+          filename = 'shaft_height.mkv'; // Match actual file in backend
         } else if (step['field'] == 'shaft_radius') {
-          filename = 'radius of shaft.mkv'; // Match actual file in backend
+          filename = 'shaft_radius.mkv'; // Match actual file in backend
         }
       } else {
         videoCategory = '${category}_housing';
@@ -209,9 +209,9 @@ class MeasurementStepModel extends ChangeNotifier {
     
     if (category == 'shaft') {
       if (step['field'] == 'shaft_height') {
-        filename = 'height of shaft.mkv'; // Match actual file in backend
+        filename = 'shaft_height.mkv'; // Match actual file in backend
       } else if (step['field'] == 'shaft_radius') {
-        filename = 'radius of shaft.mkv'; // Match actual file in backend
+        filename = 'shaft_radius.mkv'; // Match actual file in backend
       }
       return ApiService.getVideoUrl('shaft', filename);
     } else {

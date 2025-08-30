@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Future.delayed and Timer
 import 'package:bvm_manual_inspection_station/elements/common_elements/common_flushbar.dart';
+import '../../config/app_theme.dart';
 
 class MorphingDeviceConnectedButton extends StatefulWidget {
   final bool enabled;
@@ -152,13 +153,14 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
           barrierDismissible: false, // User must tap OK to dismiss
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Caliper Not Detected'),
-              content: const Text(
+              backgroundColor: AppTheme.cardBg,
+              title: Text('Caliper Not Detected', style: TextStyle(color: AppTheme.textDark)),
+              content: Text(
                   'The caliper was not detected. Please ensure it\'s connected, powered on, and try pressing '
-                  'its data button again.'),
+                  'its data button again.', style: TextStyle(color: AppTheme.textDark)),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('OK'),
+                  child: Text('OK', style: TextStyle(color: AppTheme.primary)),
                   onPressed: () {
                     Navigator.of(context).pop(); // Dismiss the dialog
                   },
