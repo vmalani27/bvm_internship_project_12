@@ -10,7 +10,7 @@ class AppConfig {
   static const String backendBaseUrlProd = 'http://pcbis.flashstudios.tech';
 
   // Choose which environment to use
-  static const bool isProduction = true; // Set to true to use the new URL
+  static const bool isProduction = false; // Set to true to use the new URL
 
   // Get backend URL based on platform and environment
   static String get backendBaseUrl {

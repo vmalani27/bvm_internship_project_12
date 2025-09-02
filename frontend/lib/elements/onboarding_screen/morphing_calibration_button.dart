@@ -2,6 +2,7 @@ import 'package:bvm_manual_inspection_station/elements/onboarding_screen/dialogb
 import 'package:flutter/material.dart';
 import 'dart:async'; // For Future.delayed
 import '../../config/app_theme.dart';
+import '../../services/session_service.dart';
 
 class MorphingCalibrationButton extends StatefulWidget {
   final bool enabled;
@@ -65,9 +66,31 @@ class _MorphingCalibrationButtonState extends State<MorphingCalibrationButton> {
       }
     });
 
-    // If calibration was successful, trigger onComplete after a short delay for animation
+    // If calibration was successful, complete the session and trigger onComplete
     if (_morphed) {
-      Future.delayed(const Duration(milliseconds: 350), widget.onComplete);
+      try {
+        // Complete the calibration session on backend
+        final sessionCompleted = await SessionService.completeCalibration();
+        
+        if (sessionCompleted) {
+          print('[LOG] Session completed successfully');
+          Future.delayed(const Duration(milliseconds: 350), widget.onComplete);
+        } else {
+          print('[LOG] Failed to complete session');
+          setState(() {
+            _morphed = false;
+            _calibrationError = 'Failed to complete session';
+          });
+          _showRetryCalibrationDialog();
+        }
+      } catch (e) {
+        print('[LOG] Error completing session: $e');
+        setState(() {
+          _morphed = false;
+          _calibrationError = 'Error completing session';
+        });
+        _showRetryCalibrationDialog();
+      }
     }
   }
 

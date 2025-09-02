@@ -1,12 +1,9 @@
 
 import 'package:bvm_manual_inspection_station/models/user_session.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:bvm_manual_inspection_station/elements/common_elements/common_flushbar.dart';
-import 'package:bvm_manual_inspection_station/config/app_config.dart';
 import 'package:bvm_manual_inspection_station/config/app_theme.dart';
-// import 'package:bvm_manual_inspection_station/config/user_session.dart';
-import 'dart:convert';
+import 'package:bvm_manual_inspection_station/services/session_service.dart';
 
 class MorphingUserEntryButton extends StatefulWidget {
   final bool enabled;
@@ -80,55 +77,36 @@ class _MorphingUserEntryButtonState extends State<MorphingUserEntryButton> {
   void _submitForm() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
-        final now = DateTime.now();
-        final date = "${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-        final time = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
-        final entry = {
-          "roll_number": _rollNumberController.text.trim(),
-          "name": _nameController.text.trim(),
-          "date": date,
-          "time": time,
-          "last_login": ""
-        };
-        final baseurl= AppConfig.backendBaseUrl;
-        final response = await http.post(
-          Uri.parse('$baseurl/user_entry'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(entry),
+        // Use SessionService instead of direct HTTP call
+        final loginResponse = await SessionService.createUserSession(
+          rollNumber: _rollNumberController.text.trim(),
+          name: _nameController.text.trim(),
         );
 
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> resp = jsonDecode(response.body);
-          if (resp['status'] == 'welcome_back') {
+        if (loginResponse != null) {
+          if (loginResponse.status == 'welcome_back') {
             showCustomFlushBar(context, 'Welcome back!');
+          } else {
+            showCustomFlushBar(context, 'Session created successfully!');
           }
-          // Check for should_calibrate flag in response and notify parent
-          if (resp.containsKey('should_calibrate') && widget.onShouldCalibrateChanged != null) {
-            widget.onShouldCalibrateChanged!(resp['should_calibrate'] as bool);
+          
+          // Notify parent about calibration requirement
+          if (widget.onShouldCalibrateChanged != null) {
+            widget.onShouldCalibrateChanged!(loginResponse.shouldCalibrate);
           }
+          
           // Set global user session values
           UserSession.rollNumber = _rollNumberController.text.trim();
           UserSession.name = _nameController.text.trim();
+          
           widget.onComplete();
           _closeForm();
-        } 
-      
-        
-        else {
-          // Handle error (show flushbar)
-          print(response.body);
-          showCustomFlushBar(context, 'Failed to submit: \\${response.body}');
+        } else {
+          showCustomFlushBar(context, 'Failed to create session. Please try again.');
         }
-        
       } catch (e) {
         print(e);
-        if(e is http.ClientException) {
-          showCustomFlushBar(context, 'please check the backend: ${e.message}');
-        } else {
-          showCustomFlushBar(context, 'Error: ${e.toString()}');
-        }
         showCustomFlushBar(context, 'Error: ${e.toString()}');
-
       }
     }
   }

@@ -6,7 +6,7 @@ import 'package:bvm_manual_inspection_station/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'elements/onboarding_screen/morphing_user_entry_button.dart';
-import 'elements/onboarding_screen/morphing_device_connected_button.dart'; // IMPORTED: Device check button
+import 'elements/onboarding_screen/adb_device_check_button_archive.dart'; // IMPORTED: ADB device check button
 import 'elements/onboarding_screen/morphing_calibration_button.dart';
 import 'config/app_theme.dart';
 import 'elements/common_elements/common_appbar.dart';
@@ -123,7 +123,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   } else if (_completedStep == 1) {
-    stepButton = MorphingDeviceConnectedButton(
+    stepButton = AdbDeviceCheckButton(
       enabled: true,
       onComplete: () {
         setState(() {
@@ -137,9 +137,6 @@ class _HomeContentState extends State<HomeContent> {
       },
       buttonBg: stepActive,
       buttonFg: Colors.white,
-      buttonBorder: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
     );
   } else if (_completedStep == 2 && _shouldCalibrate) {
     stepButton = MorphingCalibrationButton(
@@ -324,7 +321,7 @@ class _HomeContentState extends State<HomeContent> {
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    MorphingDeviceConnectedButton(
+                                    AdbDeviceCheckButton(
                                       enabled: _completedStep == 1,
                                       onComplete: () {
                                         setState(() {
@@ -340,7 +337,6 @@ class _HomeContentState extends State<HomeContent> {
                                       },
                                       buttonBg: getButtonBg(2),
                                       buttonFg: getButtonFg(2),
-                                      buttonBorder: getButtonBorder(2),
                                     ),
                                   ],
                                 ),

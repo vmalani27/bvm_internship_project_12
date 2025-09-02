@@ -21,7 +21,7 @@ class CaliperCalibrationDialog extends StatefulWidget {
 class _CaliperCalibrationDialogState extends State<CaliperCalibrationDialog> {
   // Define calibration steps (target measurements in mm)
   // You can adjust these values based on your requirements
-  final List<double> _calibrationSteps = [0.00, 10.00, 25.00, 50.00, 100.00];
+  final List<double> _calibrationSteps = [0.00, 10.00, 25.00, 50.00 ];
   int _currentStepIndex = 0;
   final List<CalibrationResult> _results = [];
 
