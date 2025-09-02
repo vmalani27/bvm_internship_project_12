@@ -38,20 +38,26 @@ class _HomeContentState extends State<HomeContent> {
       final httpResponse = await http.get(response);
       if (httpResponse.statusCode == 200) {
         final data = jsonDecode(httpResponse.body);
-        setState(() {
-          _shouldCalibrate = data['should_calibrate'] ?? true;
-        });
+        if (mounted) {
+          setState(() {
+            _shouldCalibrate = data['should_calibrate'] ?? true;
+          });
+        }
       } else {
         // On error, default to showing calibration button
+        if (mounted) {
+          setState(() {
+            _shouldCalibrate = true;
+          });
+        }
+      }
+    } catch (e) {
+      // On exception, default to showing calibration button
+      if (mounted) {
         setState(() {
           _shouldCalibrate = true;
         });
       }
-    } catch (e) {
-      // On exception, default to showing calibration button
-      setState(() {
-        _shouldCalibrate = true;
-      });
     }
   }
 
@@ -253,7 +259,7 @@ class _HomeContentState extends State<HomeContent> {
   } else {
     return Column(
       children: [
-        const BvmAppBar(),
+        const BvmAppBar(showLogoutButton: false),
         Expanded(
           child: Container(
             width: double.infinity,

@@ -602,3 +602,22 @@ The BVM Manual Inspection Station is a fully functional, production-ready applic
 - ✅ Real-time device integration capabilities
 
 **Technology Stack**: Flutter • FastAPI • Material 3 • Media Kit • Python • Dart
+
+## 🆕 Recent Frontend Updates (2025)
+
+### Session Management & Logout
+- Added robust session management: user session state is now tracked and cleared on logout.
+- Logout button added to the top app bar for all main screens.
+- On logout, user session is cleared and navigation returns to the main app widget.
+- Session data is not persisted after logout, ensuring privacy and security.
+
+### DataTable & UI Improvements
+- Table columns now fit strictly equally within the container for improved readability.
+- Reduced space between DataTable columns for a more compact view.
+- Timestamp column width capped and uses ellipsis for overflow.
+- Option to hide the record count display at the top right of the history table.
+
+### Other UI Tweaks
+- Morphing device connection button replaces legacy ADB button.
+- Improved navigation and workflow for measurement steps.
+- Minor bug fixes and code clean-up for unused variables and imports.

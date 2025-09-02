@@ -206,21 +206,21 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                     label: const Text('Export', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    '${rows.length}',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: accentColor,
-                    ),
-                  ),
-                ),
+                // Container(
+                //   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                //   decoration: BoxDecoration(
+                //     color: accentColor.withOpacity(0.2),
+                //     borderRadius: BorderRadius.circular(14),
+                //   ),
+                //   child: Text(
+                //     '${rows.length}',
+                //     style: TextStyle(
+                //       fontSize: 15,
+                //       fontWeight: FontWeight.bold,
+                //       color: accentColor,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -232,21 +232,13 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                 final bool needsScroll = avail < baseSum;
                 // When expanding: either distribute extra proportionally or evenly for shaft.
                 double widthFor(String col) {
-                  if (needsScroll) return _getColumnWidth(col);
-                  if (isShaft && columnCount > 0) {
-                    // Even distribution (account for horizontal margin and minimal padding)
-                    final double inner = avail - 48; // approximate left+right horizontalMargin (24*2)
-                    return inner / columnCount;
-                  }
-                  // proportional expansion
-                  final double extra = avail - baseSum;
-                  if (extra <= 0) return _getColumnWidth(col);
-                  final double baseW = _getColumnWidth(col);
-                  return baseW + (extra * (baseW / baseSum));
+                  // Divide the container width equally among all columns
+                  final double inner = avail - 48; // account for horizontal margin/padding
+                  return inner / columns.length;
                 }
 
                 final table = DataTable(
-                  columnSpacing: 28,
+                    columnSpacing: 8.0, // Reduced space between columns
                   horizontalMargin: 24,
                   headingRowHeight: 54,
                   dataRowMinHeight: 44,
@@ -261,7 +253,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                   ),
                   columns: columns.map((c) => DataColumn(
                     label: SizedBox(
-                      width: widthFor(c),
+                      width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                         child: Text(
@@ -283,7 +275,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                       final val = row[c];
                       return DataCell(
                         SizedBox(
-                          width: widthFor(c),
+                          width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                             child: Text(

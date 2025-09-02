@@ -65,4 +65,9 @@ Thumbs.db
 ~$*.xlsx
 
 # Misc
-*.log 
+*.log
+
+# Exclude platform-specific frontend builds
+/frontend/linux
+/frontend/macos
+/frontend/windows
