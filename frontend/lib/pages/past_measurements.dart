@@ -60,6 +60,36 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
     super.dispose();
   }
 
+  double _getColumnWidth(String columnName) {
+    // Define specific widths for different column types
+    switch (columnName.toLowerCase()) {
+      case 'id':
+      case 'unit_id':
+        return 80;
+      case 'timestamp':
+      case 'date':
+      case 'time':
+        return 140;
+      case 'housing_type':
+      case 'measurement_type':
+        return 120;
+      case 'value':
+      case 'measurement_value':
+        return 100;
+      case 'user_roll_number':
+      case 'roll_number':
+        return 130;
+      case 'product_id':
+        return 110;
+      case 'step_label':
+        return 150;
+      case 'name':
+        return 120;
+      default:
+        return 100; // Default width for any other columns
+    }
+  }
+
   Future<void> fetchMeasurements() async {
     final String baseUrl = AppConfig.backendBaseUrl;
     if (userRollNumber == null) return;
@@ -86,29 +116,42 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
   Widget buildMeasurementCard(String title, List<Map<String, dynamic>> rows, Color accentColor) {
     if (rows.isEmpty) return const SizedBox();
 
+    final List<String> columns = rows.first.keys.toList();
+    final int columnCount = columns.length;
+    final double baseSum = columns
+        .map((c) => _getColumnWidth(c))
+        .fold<double>(0, (a, b) => a + b);
+    final bool isShaft = title.toLowerCase().contains('shaft');
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: 32),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withOpacity(0.15),
           width: 1,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.08),
+            Colors.white.withOpacity(0.03),
+          ],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 22),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -119,29 +162,29 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                 ],
               ),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
+                topLeft: Radius.circular(28),
+                topRight: Radius.circular(28),
               ),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: accentColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     title.contains('Shaft') ? Icons.settings_rounded : Icons.straighten_rounded,
-                    size: 20,
+                    size: 22,
                     color: accentColor,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textDark,
                     letterSpacing: 0.5,
@@ -149,75 +192,138 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${rows.length}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: accentColor,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: accentColor,
+                      side: BorderSide(color: accentColor.withOpacity(0.6), width: 1),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      backgroundColor: accentColor.withOpacity(0.08),
                     ),
+                    icon: const Icon(Icons.download_rounded, size: 18),
+                    label: const Text('Export', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ),
+                // Container(
+                //   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                //   decoration: BoxDecoration(
+                //     color: accentColor.withOpacity(0.2),
+                //     borderRadius: BorderRadius.circular(14),
+                //   ),
+                //   child: Text(
+                //     '${rows.length}',
+                //     style: TextStyle(
+                //       fontSize: 15,
+                //       fontWeight: FontWeight.bold,
+                //       color: accentColor,
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
-          
-          // Data table
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columnSpacing: 24,
-                    horizontalMargin: 20,
-                    headingRowColor: WidgetStateProperty.all(Colors.transparent),
-                    dataRowColor: WidgetStateProperty.all(Colors.transparent),
-                    border: TableBorder(
-                      horizontalInside: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
-                        width: 1,
-                      ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final double avail = constraints.maxWidth;
+                final bool needsScroll = avail < baseSum;
+                // When expanding: either distribute extra proportionally or evenly for shaft.
+                double widthFor(String col) {
+                  // Divide the container width equally among all columns
+                  final double inner = avail - 48; // account for horizontal margin/padding
+                  return inner / columns.length;
+                }
+
+                final table = DataTable(
+                    columnSpacing: 8.0, // Reduced space between columns
+                  horizontalMargin: 24,
+                  headingRowHeight: 54,
+                  dataRowMinHeight: 44,
+                  dataRowMaxHeight: 56,
+                  headingRowColor: WidgetStateProperty.all(Colors.transparent),
+                  dataRowColor: WidgetStateProperty.all(Colors.transparent),
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                      color: Colors.white.withOpacity(0.08),
+                      width: 1,
                     ),
-                    columns: rows.first.keys.map((c) => DataColumn(
-                      label: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  columns: columns.map((c) => DataColumn(
+                    label: SizedBox(
+                      width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                         child: Text(
                           c.replaceAll('_', ' ').toUpperCase(),
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark.withOpacity(0.8),
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textDark.withOpacity(0.85),
                             fontSize: 12,
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.6,
                           ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    )).toList(),
-                    rows: rows.map((row) => DataRow(
-                      cells: row.values.map((value) => DataCell(
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            value?.toString() ?? '',
-                            style: TextStyle(
-                              color: AppTheme.textDark.withOpacity(0.9),
-                              fontSize: 13,
+                    ),
+                  )).toList(),
+                  rows: rows.map((row) => DataRow(
+                    cells: columns.map((c) {
+                      final val = row[c];
+                      return DataCell(
+                        SizedBox(
+                          width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                            child: Text(
+                              val?.toString() ?? '',
+                              style: TextStyle(
+                                color: AppTheme.textDark.withOpacity(0.92),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
-                      )).toList(),
-                    )).toList(),
+                      );
+                    }).toList(),
+                  )).toList(),
+                );
+
+                return Container(
+                  width: avail,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.12),
+                      width: 1,
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withOpacity(0.04),
+                        Colors.white.withOpacity(0.02),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                  child: needsScroll
+                      ? SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minWidth: baseSum),
+                            child: table,
+                          ),
+                        )
+                      : table,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -315,7 +421,15 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
               Expanded(
                 child: Center(
                   child: Container(
-                    constraints: const BoxConstraints(maxWidth: 800),
+                    // Make central content much wider to fit full-width tables
+                    constraints: BoxConstraints(
+                      maxWidth: () {
+                        final w = MediaQuery.of(context).size.width;
+                        final target = w * 0.95; // use 95% of available width
+                        final capped = target > 1500 ? 1500 : target; // cap at 1500 for ultra-wide
+                        return capped.toDouble();
+                      }(),
+                    ),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                     child: isLoading
                         ? Column(
@@ -357,10 +471,10 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                                   filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
+                                      color: AppTheme.error.withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(24),
                                       border: Border.all(
-                                        color: Colors.red.withOpacity(0.2),
+                                        color: AppTheme.error.withOpacity(0.2),
                                         width: 1,
                                       ),
                                     ),
@@ -371,7 +485,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                                         Icon(
                                           Icons.error_outline_rounded,
                                           size: 48,
-                                          color: Colors.red,
+                                          color: AppTheme.error,
                                         ),
                                         const SizedBox(height: 16),
                                         Text(
@@ -397,7 +511,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                                           icon: const Icon(Icons.refresh_rounded),
                                           label: const Text('Retry'),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
+                                            backgroundColor: AppTheme.error,
                                             foregroundColor: Colors.white,
                                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                             shape: RoundedRectangleBorder(
@@ -474,14 +588,13 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        // Animated title
                                         AnimatedBuilder(
                                           animation: _titleAnimation,
                                           builder: (context, child) {
-                                            return Transform.translate(
-                                              offset: Offset(0, 20 * (1 - _titleAnimation.value)),
-                                              child: Opacity(
-                                                opacity: _titleAnimation.value,
+                                            return Opacity(
+                                              opacity: _titleAnimation.value,
+                                              child: Transform.translate(
+                                                offset: Offset(0, 20 * (1 - _titleAnimation.value)),
                                                 child: Container(
                                                   margin: const EdgeInsets.only(bottom: 24),
                                                   padding: const EdgeInsets.all(24),
@@ -560,8 +673,6 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                                             );
                                           },
                                         ),
-                                        
-                                        // Animated content
                                         AnimatedBuilder(
                                           animation: _contentAnimation,
                                           builder: (context, child) {

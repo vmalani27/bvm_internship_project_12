@@ -86,23 +86,23 @@ class _BackendTestWidgetState extends State<BackendTestWidget> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _isConnected! ? Colors.green.shade100 : Colors.red.shade100,
+                  color: _isConnected! ? AppTheme.success.withOpacity(0.1) : AppTheme.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: _isConnected! ? Colors.green : Colors.red,
+                    color: _isConnected! ? AppTheme.success : AppTheme.error,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _isConnected! ? Icons.check_circle : Icons.error,
-                      color: _isConnected! ? Colors.green : Colors.red,
+                      color: _isConnected! ? AppTheme.success : AppTheme.error,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       _isConnected! ? 'Backend Connected' : 'Connection Failed',
                       style: TextStyle(
-                        color: _isConnected! ? Colors.green.shade800 : Colors.red.shade800,
+                        color: _isConnected! ? AppTheme.success : AppTheme.error,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

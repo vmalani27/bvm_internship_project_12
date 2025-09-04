@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_theme.dart';
 
 class UserEntryPage extends StatefulWidget {
   final String category;
@@ -19,7 +20,7 @@ class _UserEntryPageState extends State<UserEntryPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Enter User Details'),
-        backgroundColor: widget.category == 'housing' ? Colors.blue[700] : Colors.green[700],
+        backgroundColor: widget.category == 'housing' ? AppTheme.primary : AppTheme.secondary,
         foregroundColor: Colors.white,
       ),
       body: Center(

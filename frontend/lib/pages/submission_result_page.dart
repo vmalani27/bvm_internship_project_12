@@ -45,7 +45,7 @@ class _SubmissionResultPageState extends State<SubmissionResultPage> with Ticker
   Widget build(BuildContext context) {
     final Color bgColor = AppTheme.bgColor;
     final Color cardBg = AppTheme.cardBg;
-    final Color accent = widget.success ? Colors.green : Colors.red;
+    final Color accent = widget.success ? AppTheme.success : AppTheme.error;
     final Color textColor = AppTheme.textDark;
     
     return Scaffold(

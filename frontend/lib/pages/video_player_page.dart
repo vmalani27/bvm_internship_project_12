@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import '../config/app_config.dart';
+import '../config/app_theme.dart';
 import 'dart:developer' as developer;
 
 class VideoPlayerPage extends StatefulWidget {
@@ -119,9 +120,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+          Icon(Icons.error_outline, size: 48, color: AppTheme.error),
           const SizedBox(height: 16),
-          Text(_error!, style: const TextStyle(color: Colors.red)),
+          Text(_error!, style: TextStyle(color: AppTheme.error)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _initializePlayer,
@@ -145,9 +146,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                Icon(Icons.error_outline, size: 48, color: AppTheme.error),
                 const SizedBox(height: 16),
-                Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+                Text('Error: ${snapshot.error}', style: TextStyle(color: AppTheme.error)),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _initializePlayer,
@@ -177,8 +178,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   child: VideoProgressIndicator(
                     _controller!,
                     allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: Colors.blue,
+                    colors: VideoProgressColors(
+                      playedColor: AppTheme.primary,
                       bufferedColor: Colors.grey,
                       backgroundColor: Colors.black26,
                     ),
@@ -194,7 +195,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                         _controller!.value.isPlaying
                             ? Icons.pause_circle_filled
                             : Icons.play_circle_filled,
-                        color: Colors.blue,
+                        color: AppTheme.primary,
                       ),
                       onPressed: () {
                         setState(() {

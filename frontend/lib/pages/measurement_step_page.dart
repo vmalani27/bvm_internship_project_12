@@ -9,6 +9,7 @@ import '../config/app_theme.dart';
 import 'measurement_summary_widget.dart';
 import '../elements/measurement_input_widget.dart';
 import '../models/measurement_step_controller.dart'; // <-- NEW CONTROLLER
+import '../services/api_service.dart';
 
 class MeasurementStepPage extends StatefulWidget {
   final String category;
@@ -189,7 +190,7 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error, color: Colors.red, size: 48),
+              Icon(Icons.error, color: AppTheme.error, size: 48),
               const SizedBox(height: 16),
               const Text('Error loading video player'),
               const SizedBox(height: 8),
@@ -549,40 +550,70 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
                         scale: _contentAnimation.value,
                         child: Column(
                           children: [
-                            TextFormField(
-                              controller: _productIdController,
-                              style: TextStyle(
-                                  fontSize: 18, color: textColor),
-                              decoration: InputDecoration(
-                                labelText: _isHousingCategory 
-                                  ? 'Housing ID'
-                                  : 'Product ID',
-                                labelStyle: TextStyle(
-                                    color: accent,
-                                    fontWeight: FontWeight.w600),
-                                prefixIcon: Icon(
-                                    Icons.confirmation_number_rounded,
-                                    color: accent),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16)),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide: BorderSide(
-                                      color: accent.withOpacity(0.3),
-                                      width: 1.5),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                  borderSide:
-                                      BorderSide(color: accent, width: 2),
-                                ),
-                                filled: true,
-                                fillColor:
-                                    Colors.white.withOpacity(0.05),
-                                contentPadding:
-                                    const EdgeInsets.symmetric(
-                                        vertical: 16, horizontal: 20),
-                              ),
+                            StatefulBuilder(
+                              builder: (context, setInner) {
+                                String? statusText;
+                                Color statusColor = Colors.transparent;
+                                bool checking = false;
+
+                                Future<void> doCheck() async {
+                                  final id = _productIdController.text.trim();
+                                  if (id.isEmpty) return;
+                                  setInner(() { checking = true; });
+                                  final exists = await ApiService.productExists(
+                                    productId: id,
+                                    measurementType: _isHousingCategory ? 'housing' : 'shaft',
+                                  );
+                                  setInner(() {
+                                    checking = false;
+                                    statusText = exists ? 'ID already used' : 'ID available';
+                                    statusColor = exists ? AppTheme.error : Colors.greenAccent;
+                                  });
+                                }
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    TextFormField(
+                                      controller: _productIdController,
+                                      onChanged: (_) { setInner(() { statusText = null; }); },
+                                      onFieldSubmitted: (_) => doCheck(),
+                                      style: TextStyle(fontSize: 18, color: textColor),
+                                      decoration: InputDecoration(
+                                        labelText: _isHousingCategory ? 'Housing ID' : 'Product ID',
+                                        suffixIcon: checking
+                                            ? Padding(
+                                                padding: const EdgeInsets.all(12.0),
+                                                child: SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+                                                ),
+                                              )
+                                            : null,
+                                        labelStyle: TextStyle(color: accent, fontWeight: FontWeight.w600),
+                                        prefixIcon: Icon(Icons.confirmation_number_rounded, color: accent),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: accent.withOpacity(0.3), width: 1.5),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(color: accent, width: 2),
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white.withOpacity(0.05),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                                      ),
+                                    ),
+                                    if (statusText != null) ...[
+                                      const SizedBox(height: 6),
+                                      Text(statusText!, style: TextStyle(color: statusColor, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(height: 24),
                             Container(
@@ -610,18 +641,28 @@ class _MeasurementStepPageState extends State<MeasurementStepPage>
                                 color: Colors.transparent,
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(16),
-                                  onTap: () {
-                                    if (_productIdController.text
-                                        .trim()
-                                        .isNotEmpty) {
-                                      developer.log('[ProductID] Product ID set: ${_productIdController.text.trim()}');
-                                      developer.log('[ProductID] Category: ${widget.category}, Is housing: $_isHousingCategory');
-                                      setState(() {
-                                        widget.model.productId =
-                                            _productIdController.text.trim();
-                                        _productIdSet = true;
-                                      });
+                                  onTap: () async {
+                                    final entered = _productIdController.text.trim();
+                                    if (entered.isEmpty) return;
+                                    final exists = await ApiService.productExists(
+                                      productId: entered,
+                                      measurementType: _isHousingCategory ? 'housing' : 'shaft',
+                                    );
+                                    if (exists) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('ID already exists. Choose a different one.'),
+                                          backgroundColor: AppTheme.error,
+                                        ),
+                                      );
+                                      return;
                                     }
+                                    developer.log('[ProductID] Product ID set: $entered');
+                                    developer.log('[ProductID] Category: ${widget.category}, Is housing: $_isHousingCategory');
+                                    setState(() {
+                                      widget.model.productId = entered;
+                                      _productIdSet = true;
+                                    });
                                   },
                                   child: Row(
                                     mainAxisAlignment:

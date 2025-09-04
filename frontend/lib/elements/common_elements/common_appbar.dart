@@ -1,13 +1,17 @@
 // Custom AppBar with BVM logo and current date/time
 // (removed duplicate import)
 import 'dart:async';
+import 'package:bvm_manual_inspection_station/app.dart';
 import 'package:bvm_manual_inspection_station/config/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:bvm_manual_inspection_station/models/user_session.dart';
+import 'package:bvm_manual_inspection_station/main.dart';
 
 
 class BvmAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String? title;
-  const BvmAppBar({super.key, this.title});
+  final bool showLogoutButton;
+  const BvmAppBar({super.key, this.title, this.showLogoutButton = true});
 
   @override
   Size get preferredSize => Size.fromHeight(title == null ? 64 : 104);
@@ -127,12 +131,36 @@ class _BvmAppBarState extends State<BvmAppBar> {
               ],
             ),
           ),
-          // Time on the far right
+          // Time and logout button on the far right
           Align(
             alignment: Alignment.centerRight,
-            child: Text(
-              _time,
-              style: const TextStyle(color: AppTheme.textBody, fontSize: 16, fontWeight: FontWeight.w500),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _time,
+                  style: const TextStyle(color: AppTheme.textBody, fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                if (widget.showLogoutButton) ...[
+                  const SizedBox(width: 18),
+                  IconButton(
+                    icon: const Icon(Icons.logout_rounded, color: AppTheme.error, size: 22),
+                    tooltip: 'Log out',
+                    onPressed: () {
+                      // Clear session
+                      // ignore: avoid_print
+                      print('[LOG] User logging out');
+                      UserSession.rollNumber = null;
+                      UserSession.name = null;
+                      // Pop all routes and restart the app
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => BvmManualInspectionStationApp()),
+                        (route) => false,
+                      );
+                    },
+                  ),
+                ],
+              ],
             ),
           ),
         ],

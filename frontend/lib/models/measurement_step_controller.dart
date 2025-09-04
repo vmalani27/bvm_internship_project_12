@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../models/measurement_step_model.dart';
 import 'package:flutter/foundation.dart';
+import '../config/app_theme.dart';
 
 class MeasurementStepController extends ChangeNotifier {
   final MeasurementStepModel model;
@@ -132,12 +133,13 @@ class MeasurementStepController extends ChangeNotifier {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Caliper Not Detected'),
-        content: const Text('Please ensure your caliper is connected and try again.'),
+        backgroundColor: AppTheme.cardBg,
+        title: Text('Caliper Not Detected', style: TextStyle(color: AppTheme.textDark)),
+        content: Text('Please ensure your caliper is connected and try again.', style: TextStyle(color: AppTheme.textDark)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text('OK', style: TextStyle(color: AppTheme.primary)),
           ),
         ],
       ),
