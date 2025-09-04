@@ -21,7 +21,7 @@ void main() async {
     await windowManager.ensureInitialized();
     
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(1920, 1080), // Set initial size
+      size: Size(1920, 1080), // Initial size before fullscreen
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
@@ -31,10 +31,15 @@ void main() async {
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
-      await windowManager.setFullScreen(true); // Set to fullscreen
+      
+      // Set true fullscreen for perfect screen fit
+      await windowManager.setFullScreen(true);
+      
+      // Additional step: ensure it covers the entire screen
+      await windowManager.setAlwaysOnTop(false);
     });
     
-    developer.log('Desktop platform - fullscreen mode enabled');
+    developer.log('Desktop platform - true fullscreen enabled for perfect screen fit');
   } else {
     // Mobile platforms (Android/iOS) - use SystemChrome
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -42,5 +47,18 @@ void main() async {
   }
   
   developer.log('Starting Flutter app with backend URL: ${AppConfig.backendBaseUrl}');
+  developer.log('Diagnostics: isProduction=${AppConfig.isProduction} platform=${kIsWeb ? 'web' : (Platform.isAndroid ? 'android' : Platform.isWindows ? 'windows' : Platform.isLinux ? 'linux' : Platform.isMacOS ? 'macos' : 'other')}');
+  try {
+    // Quick TCP reachability hint (desktop only, skip on web/mobile if restrictions apply)
+    if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      final sw = Stopwatch()..start();
+      final socket = await Socket.connect(Uri.parse(AppConfig.backendBaseUrl).host, Uri.parse(AppConfig.backendBaseUrl).port, timeout: const Duration(milliseconds: 600));
+      sw.stop();
+      developer.log('Backend reachability: TCP connect succeeded in ${sw.elapsedMilliseconds}ms');
+      socket.destroy();
+    }
+  } catch (e) {
+    developer.log('Backend reachability: FAILED -> $e');
+  }
   runApp(BvmManualInspectionStationApp());
 } 

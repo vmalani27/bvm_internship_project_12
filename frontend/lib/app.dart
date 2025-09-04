@@ -36,18 +36,32 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
 
   // Check if user has an existing session on app start
   Future<void> _checkExistingSession() async {
-    final session = await SessionService.getSessionStatus();
-    
-    if (session != null) {
-      if (session.status == 'pending_calibration') {
-        print('[LOG] Found incomplete session, user needs to complete calibration');
-        // You could show a dialog or navigate to calibration here
-      } else if (session.status == 'calibrated') {
-        // Session completed, clean up
-        await SessionService.clearSession();
-        print('[LOG] Previous session was completed, cleared from storage');
+    try {
+      _log('_checkExistingSession: Starting session check');
+      
+      final session = await SessionService.getSessionStatus();
+      
+      if (session != null) {
+        if (session.status == 'pending_calibration') {
+          print('[LOG] Found incomplete session, user needs to complete calibration');
+          // You could show a dialog or navigate to calibration here
+        } else if (session.status == 'calibrated') {
+          // Session completed, clean up
+          await SessionService.clearSession();
+          print('[LOG] Previous session was completed, cleared from storage');
+        }
+      } else {
+        print('[LOG] No existing session found');
       }
+    } catch (e) {
+      print('[ERROR] Failed to check existing session: $e');
+      print('[LOG] Continuing without session check - app should still work');
+      // Continue without session - app should still work
     }
+  }
+  
+  void _log(String message) {
+    print('[App] $message');
   }
 
   Future<void> _checkFullscreenStatus() async {
@@ -66,7 +80,16 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
     if (isFs) {
       await windowManager.setFullScreen(false);
       await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-      await windowManager.setSize(const Size(1400, 900));
+      
+      // Use 80% of screen size for windowed mode instead of fixed size
+      final screen = MediaQuery.of(context);
+      final screenSize = screen.size;
+      final windowSize = Size(
+        screenSize.width * 0.8, 
+        screenSize.height * 0.8
+      );
+      
+      await windowManager.setSize(windowSize);
       await windowManager.center();
       
       setState(() {
@@ -95,7 +118,28 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
         const SingleActivator(LogicalKeyboardKey.f11): () async {
           if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
             final isFs = await windowManager.isFullScreen();
-            await windowManager.setFullScreen(!isFs);
+            
+            if (isFs) {
+              // Exit fullscreen
+              await windowManager.setFullScreen(false);
+              await windowManager.setTitleBarStyle(TitleBarStyle.normal);
+              
+              // Use 80% of screen size for windowed mode
+              final screen = MediaQuery.of(context);
+              final screenSize = screen.size;
+              final windowSize = Size(
+                screenSize.width * 0.8, 
+                screenSize.height * 0.8
+              );
+              
+              await windowManager.setSize(windowSize);
+              await windowManager.center();
+            } else {
+              // Enter fullscreen
+              await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+              await windowManager.setFullScreen(true);
+            }
+            
             setState(() {
               _isFullScreen = !isFs;
             });
