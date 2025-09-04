@@ -5,6 +5,7 @@ import '../config/app_theme.dart';
 import '../models/user_session.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class PastMeasurementsPage extends StatefulWidget {
   const PastMeasurementsPage({super.key});
@@ -273,13 +274,29 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                   rows: rows.map((row) => DataRow(
                     cells: columns.map((c) {
                       final val = row[c];
+                      String displayValue;
+                      if (c.toLowerCase() == 'timestamp' && val != null) {
+                        try {
+                          // Try to parse and format the timestamp
+                          final dt = val is DateTime ? val : DateTime.tryParse(val.toString());
+                          if (dt != null) {
+                            displayValue = DateFormat('dd MMM yyyy, hh:mm a').format(dt);
+                          } else {
+                            displayValue = val.toString();
+                          }
+                        } catch (_) {
+                          displayValue = val.toString();
+                        }
+                      } else {
+                        displayValue = val?.toString() ?? '';
+                      }
                       return DataCell(
                         SizedBox(
                           width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                             child: Text(
-                              val?.toString() ?? '',
+                              displayValue,
                               style: TextStyle(
                                 color: AppTheme.textDark.withOpacity(0.92),
                                 fontSize: 13,
