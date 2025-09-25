@@ -5,7 +5,6 @@ import 'package:bvm_manual_inspection_station/app.dart';
 import 'package:bvm_manual_inspection_station/config/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:bvm_manual_inspection_station/models/user_session.dart';
-import 'package:bvm_manual_inspection_station/main.dart';
 
 
 class BvmAppBar extends StatefulWidget implements PreferredSizeWidget {

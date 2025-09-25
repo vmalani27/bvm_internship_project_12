@@ -6,11 +6,16 @@ import 'package:bvm_manual_inspection_station/utils/route_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'elements/onboarding_screen/morphing_user_entry_button.dart';
-import 'elements/onboarding_screen/adb_device_check_button_archive.dart'; // IMPORTED: ADB device check button
+// Removed: 'elements/onboarding_screen/adb_device_check_button_archive.dart';
 import 'elements/onboarding_screen/morphing_calibration_button.dart';
 import 'config/app_theme.dart';
 import 'elements/common_elements/common_appbar.dart';
 import 'config/app_config.dart';
+
+// Step colors for use throughout the widget
+const Color stepActive = AppTheme.primary;
+const Color stepCompleted = AppTheme.secondary;
+const Color stepInactive = Color(0xFFE0E7EF);
 class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
@@ -64,16 +69,13 @@ class _HomeContentState extends State<HomeContent> {
   // Add your _buildSteps function here
   Widget _buildSteps(BuildContext context) {
     // Define your steps (labels or any other info you want)
-    final List<String> _steps = _shouldCalibrate ? ['1', '2', '3'] : ['1', '2'];
+    final List<String> steps0 = _shouldCalibrate ? ['1', '2', '3'] : ['1', '2'];
 
     // Use AppTheme palette
-    const Color stepActive = AppTheme.primary;
-    const Color stepCompleted = AppTheme.secondary;
-    const Color stepInactive = Color(0xFFE0E7EF);
 
     List<Widget> steps = [];
 
-    for (int i = 0; i < _steps.length; i++) {
+    for (int i = 0; i < steps0.length; i++) {
       steps.add(
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -81,12 +83,12 @@ class _HomeContentState extends State<HomeContent> {
             _ThemedStepCircle(
               isCompleted: _completedStep > i,
               isActive: _completedStep == i,
-              label: _steps[i],
+              label: steps0[i],
               activeColor: stepActive,
               completedColor: stepCompleted,
               inactiveColor: stepInactive,
             ),
-            if (i < _steps.length - 1) ...[
+            if (i < steps0.length - 1) ...[
               const SizedBox(width: 40),
               _ThemedStepLine(isActive: _completedStep >= i + 1, color: stepActive),
               const SizedBox(width: 40),
@@ -103,10 +105,6 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildCurrentStepAndroid(BuildContext context) {
-  // Use AppTheme palette
-  const Color stepActive = AppTheme.primary;
-  const Color stepCompleted = AppTheme.secondary;
-  const Color stepInactive = Color(0xFFE0E7EF);
 
   Widget stepButton;
   if (_completedStep == 0) {
@@ -129,9 +127,9 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   } else if (_completedStep == 1) {
-    stepButton = AdbDeviceCheckButton(
-      enabled: true,
-      onComplete: () {
+    // Step 2 placeholder for web: ADB device check skipped
+    stepButton = ElevatedButton(
+      onPressed: () {
         setState(() {
           _completedStep = 2;
         });
@@ -141,8 +139,14 @@ class _HomeContentState extends State<HomeContent> {
           });
         }
       },
-      buttonBg: stepActive,
-      buttonFg: Colors.white,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: stepActive,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      child: const Text('Skip Device Check (Web)'),
     );
   } else if (_completedStep == 2 && _shouldCalibrate) {
     stepButton = MorphingCalibrationButton(
@@ -185,9 +189,7 @@ class _HomeContentState extends State<HomeContent> {
   @override
   Widget build(BuildContext context) {
     // Use AppTheme palette
-    const Color stepActive = AppTheme.primary;
-    const Color stepCompleted = AppTheme.secondary;
-    const Color stepInactive = Color(0xFFE0E7EF);
+// Step colors for use throughout the widget
 
     Color getButtonBg(int step) {
       if (_completedStep > step) return AppTheme.secondary;
@@ -327,22 +329,27 @@ class _HomeContentState extends State<HomeContent> {
                                 Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    AdbDeviceCheckButton(
-                                      enabled: _completedStep == 1,
-                                      onComplete: () {
-                                        setState(() {
-                                          _completedStep = 2;
-                                        });
-                                        if (!_shouldCalibrate) {
-                                          // Skip calibration and move to next page
-                                          print('[LOG] Skipping calibration, moving to next page');
-                                          Future.delayed(const Duration(milliseconds: 600), () {
-                                            Navigator.of(context).push(createSlideUpRoute());
-                                          });
-                                        }
-                                      },
-                                      buttonBg: getButtonBg(2),
-                                      buttonFg: getButtonFg(2),
+                                    // Step 2 placeholder for web: ADB device check skipped
+                                    ElevatedButton(
+                                      onPressed: _completedStep == 1
+                                          ? () {
+                                              setState(() {
+                                                _completedStep = 2;
+                                              });
+                                              if (!_shouldCalibrate) {
+                                                // Skip calibration and move to next page
+                                                Future.delayed(const Duration(milliseconds: 600), () {
+                                                  Navigator.of(context).push(createSlideUpRoute());
+                                                });
+                                              }
+                                            }
+                                          : null,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: getButtonBg(2),
+                                        foregroundColor: getButtonFg(2),
+                                        shape: getButtonBorder(2),
+                                      ),
+                                      child: const Text('Skip Device Check (Web)'),
                                     ),
                                   ],
                                 ),

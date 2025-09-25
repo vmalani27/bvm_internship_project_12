@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+// import 'dart:io';
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
@@ -21,8 +21,7 @@ class SessionException implements Exception {
 }
 
 class NetworkException extends SessionException {
-  NetworkException(String message, {String? code, dynamic originalError})
-      : super(message, code: code, originalError: originalError);
+  NetworkException(super.message, {super.code, super.originalError});
 }
 
 class SessionService {
@@ -175,22 +174,11 @@ class SessionService {
         code: 'TIMEOUT',
         originalError: e,
       );
-    } on SocketException catch (e, stackTrace) {
+    } catch (e, stackTrace) {
       _log('createUserSession: Network exception: $e');
       _log('createUserSession: Stack trace: $stackTrace');
       throw NetworkException(
-        'Network connection failed: ${e.message}',
-        code: 'NETWORK_ERROR',
-        originalError: e,
-      );
-    } on SessionException {
-      rethrow;
-    } catch (e, stackTrace) {
-      _log('createUserSession: Unexpected exception: $e');
-      _log('createUserSession: Stack trace: $stackTrace');
-      throw SessionException(
-        'Failed to create user session: ${e.toString()}',
-        code: 'UNKNOWN_ERROR',
+        'Network error: $e',
         originalError: e,
       );
     }
@@ -276,14 +264,6 @@ class SessionService {
       throw NetworkException(
         'Request timed out after ${_defaultTimeout.inSeconds} seconds',
         code: 'TIMEOUT',
-        originalError: e,
-      );
-    } on SocketException catch (e, stackTrace) {
-      _log('completeCalibration: Network exception: $e');
-      _log('completeCalibration: Stack trace: $stackTrace');
-      throw NetworkException(
-        'Network connection failed: ${e.message}',
-        code: 'NETWORK_ERROR',
         originalError: e,
       );
     } on SessionException {
@@ -381,14 +361,6 @@ class SessionService {
       throw NetworkException(
         'Request timed out after ${_defaultTimeout.inSeconds} seconds',
         code: 'TIMEOUT',
-        originalError: e,
-      );
-    } on SocketException catch (e, stackTrace) {
-      _log('getSessionStatus: Network exception: $e');
-      _log('getSessionStatus: Stack trace: $stackTrace');
-      throw NetworkException(
-        'Network connection failed: ${e.message}',
-        code: 'NETWORK_ERROR',
         originalError: e,
       );
     } on SessionException {

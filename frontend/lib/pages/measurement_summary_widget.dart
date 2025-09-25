@@ -11,9 +11,9 @@ class MeasurementSummaryWidget extends StatelessWidget {
   final MeasurementStepModel model;
   
   const MeasurementSummaryWidget({
-    Key? key, 
+    super.key, 
     required this.model
-  }) : super(key: key);
+  });
 
   Future<void> _submitMeasurement(BuildContext context) async {
     // Prepare the measurements map for submission

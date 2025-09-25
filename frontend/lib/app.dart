@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:window_manager/window_manager.dart';
+// import 'package:window_manager/window_manager.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
+// import 'dart:io';
 import 'home_content.dart';
 import 'config/app_theme.dart';
 import 'services/app_lifecycle_service.dart';
@@ -16,16 +16,15 @@ class BvmManualInspectionStationApp extends StatefulWidget {
 }
 
 class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStationApp> {
-  final FocusNode _focusNode = FocusNode();
+  // final FocusNode _focusNode = FocusNode();
   bool _isFullScreen = false;
   final AppLifecycleService _lifecycleService = AppLifecycleService();
 
   @override
   void initState() {
     super.initState();
-    _lifecycleService.initialize();
-    _checkFullscreenStatus();
-    _checkExistingSession();
+  _lifecycleService.initialize();
+  _checkExistingSession();
   }
 
   @override
@@ -64,101 +63,22 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
     print('[App] $message');
   }
 
-  Future<void> _checkFullscreenStatus() async {
-    if (kIsWeb) return;
-    if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
-    
-    _isFullScreen = await windowManager.isFullScreen();
-    setState(() {});
-  }
-
-  Future<void> _exitFullscreenIfNeeded() async {
-    if (kIsWeb) return;
-    if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
-    
-    final bool isFs = await windowManager.isFullScreen();
-    if (isFs) {
-      await windowManager.setFullScreen(false);
-      await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-      
-      // Use 80% of screen size for windowed mode instead of fixed size
-      final screen = MediaQuery.of(context);
-      final screenSize = screen.size;
-      final windowSize = Size(
-        screenSize.width * 0.8, 
-        screenSize.height * 0.8
-      );
-      
-      await windowManager.setSize(windowSize);
-      await windowManager.center();
-      
-      setState(() {
-        _isFullScreen = false;
-      });
-    }
-  }
+  // Fullscreen/windowed logic removed for web-only build
 
   // Add this method to force refresh in fullscreen
-  void _forceRefreshInFullscreen() {
-    if (_isFullScreen) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
-  }
+  // No-op for web-only build
+  void _forceRefreshInFullscreen() {}
 
   @override
   Widget build(BuildContext context) {
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): _exitFullscreenIfNeeded,
-        // Add F11 to toggle fullscreen
-        const SingleActivator(LogicalKeyboardKey.f11): () async {
-          if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-            final isFs = await windowManager.isFullScreen();
-            
-            if (isFs) {
-              // Exit fullscreen
-              await windowManager.setFullScreen(false);
-              await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-              
-              // Use 80% of screen size for windowed mode
-              final screen = MediaQuery.of(context);
-              final screenSize = screen.size;
-              final windowSize = Size(
-                screenSize.width * 0.8, 
-                screenSize.height * 0.8
-              );
-              
-              await windowManager.setSize(windowSize);
-              await windowManager.center();
-            } else {
-              // Enter fullscreen
-              await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
-              await windowManager.setFullScreen(true);
-            }
-            
-            setState(() {
-              _isFullScreen = !isFs;
-            });
-          }
-        },
-      },
-      child: Focus(
-        autofocus: true,
-        focusNode: _focusNode,
-        child: MaterialApp(
-          title: 'BVM Manual Inspection Station',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.themeData,
-          home: FullscreenAwareWidget(
-            isFullScreen: _isFullScreen,
-            onStateChanged: _forceRefreshInFullscreen,
-            child: const OnboardingScreen(),
-          ),
-        ),
+    return MaterialApp(
+      title: 'BVM Manual Inspection Station',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.themeData,
+      home: FullscreenAwareWidget(
+        isFullScreen: _isFullScreen,
+        onStateChanged: _forceRefreshInFullscreen,
+        child: const OnboardingScreen(),
       ),
     );
   }

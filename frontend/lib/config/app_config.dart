@@ -1,10 +1,9 @@
-import 'dart:io';
-import 'package:dotenv/dotenv.dart';
+// import 'dart:io';
 
 class AppConfig {
   // URLs for different platforms
   static const String backendBaseUrlWindows = 'http://127.0.0.1:5000';
-  static const String backendBaseUrlAndroid = 'http://172.29.250.34:5000';
+  // static const String backendBaseUrlAndroid = 'http://172.29.250.34:5000';
   
   // Updated production URL
   static const String backendBaseUrlProd = 'http://pcbis.flashstudios.tech';
@@ -16,13 +15,7 @@ class AppConfig {
   static String get backendBaseUrl {
     if (isProduction) return backendBaseUrlProd;
 
-    if (Platform.isAndroid) {
-      return backendBaseUrlAndroid;
-    } else if (Platform.isWindows) {
-      return backendBaseUrlWindows;
-    } else {
-      // Default fallback for other platforms (e.g., iOS, macOS, Linux)
-      return backendBaseUrlAndroid;
-    }
+    // For web-only build, always return default base URL
+    return backendBaseUrlWindows; // This line can be changed to return _defaultBaseUrl if needed
   }
 }
