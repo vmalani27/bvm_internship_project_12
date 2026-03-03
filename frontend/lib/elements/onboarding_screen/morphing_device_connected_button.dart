@@ -19,19 +19,23 @@ class MorphingDeviceConnectedButton extends StatefulWidget {
   });
 
   @override
-  State<MorphingDeviceConnectedButton> createState() => _MorphingDeviceConnectedButtonState();
+  State<MorphingDeviceConnectedButton> createState() =>
+      _MorphingDeviceConnectedButtonState();
 }
 
-class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedButton> {
-  bool _morphed = false; // Controls the button's morphed state (connected/not connected)
+class _MorphingDeviceConnectedButtonState
+    extends State<MorphingDeviceConnectedButton> {
+  bool _morphed =
+      false; // Controls the button's morphed state (connected/not connected)
   bool _checking = false; // Indicates if the connection check is in progress
-  String? _error; // Stores internal error state: null (no error), 'timeout' (failed check)
+  String?
+  _error; // Stores internal error state: null (no error), 'timeout' (failed check)
 
   // TextEditingController and FocusNode for the hidden TextField
   // This TextField will capture the caliper's keyboard input.
   final TextEditingController _caliperInputController = TextEditingController();
   final FocusNode _caliperFocusNode = FocusNode();
-  
+
   Timer? _checkTimeoutTimer; // Timer for overall connection check timeout
   Timer? _inputCompletionTimer; // Timer to detect pause in caliper input
 
@@ -63,7 +67,9 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
     // --- CRITICAL DEBUGGING LINE ---
     // This will show the exact content of the controller at each change
     // ignore: avoid_print
-    print('Raw input in controller: "$currentText" (Length: ${currentText.length})');
+    print(
+      'Raw input in controller: "$currentText" (Length: ${currentText.length})',
+    );
     // -------------------------------
 
     // Reset the input completion timer every time a character is received.
@@ -124,45 +130,49 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
 
     // Clear any existing text in case of previous attempts
     _caliperInputController.clear();
-    _inputCompletionTimer?.cancel(); // Ensure no old input completion timer is active
+    _inputCompletionTimer
+        ?.cancel(); // Ensure no old input completion timer is active
 
     // Request focus for the hidden TextField after the current frame is built
     // This ensures the TextField is ready to receive input
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_caliperFocusNode);
       // Show a temporary message to the user
-      showCustomFlushBar(context, 'Please press the data button on your caliper now.');
+      showCustomFlushBar(
+        context,
+        'Please press the data button on your caliper now.',
+      );
     });
 
     // Reintroduced the timeout timer to set the error state
     _checkTimeoutTimer = Timer(const Duration(seconds: 10), () {
-      if (_checking && !_morphed) { // If still checking and not yet morphed
-        setState(() {
-          _checking = false;
-          _error = 'timeout'; // Set internal error state to trigger red button
-        });
-        // Unfocus the hidden TextField
-        _caliperFocusNode.unfocus();
+      if (_checking && !_morphed) {
+        _stopCaliperCheck();
         // Log the timeout
         // ignore: avoid_print
         print('[LOG] Caliper connection check timed out. Showing dialog.');
-        
+
         // Show the error in an AlertDialog
         showDialog(
           context: context,
-          barrierDismissible: false, // User must tap OK to dismiss
+          barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
               backgroundColor: AppTheme.cardBg,
-              title: Text('Caliper Not Detected', style: TextStyle(color: AppTheme.textDark)),
+              title: Text(
+                'Caliper Not Detected',
+                style: TextStyle(color: AppTheme.textDark),
+              ),
               content: Text(
-                  'The caliper was not detected. Please ensure it\'s connected, powered on, and try pressing '
-                  'its data button again.', style: TextStyle(color: AppTheme.textDark)),
+                'The caliper was not detected. Please ensure it\'s connected, powered on, and try pressing '
+                'its data button again.',
+                style: TextStyle(color: AppTheme.textDark),
+              ),
               actions: <Widget>[
                 TextButton(
                   child: Text('OK', style: TextStyle(color: AppTheme.primary)),
                   onPressed: () {
-                    Navigator.of(context).pop(); // Dismiss the dialog
+                    Navigator.of(context).pop();
                   },
                 ),
               ],
@@ -173,17 +183,28 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
     });
   }
 
+  void _stopCaliperCheck() {
+    setState(() {
+      _checking = false;
+      _error = 'timeout';
+    });
+    _caliperFocusNode.unfocus();
+    _checkTimeoutTimer?.cancel();
+    _inputCompletionTimer?.cancel();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determine the current background color based on error state
-    Color currentButtonBg = _error != null ? Colors.red.shade700 : widget.buttonBg;
+    Color currentButtonBg =
+        _error != null ? Colors.red.shade700 : widget.buttonBg;
     // Determine the current foreground color based on error state
     Color currentButtonFg = _error != null ? Colors.white : widget.buttonFg;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeInOut,
-      width: _morphed ? 260 : 140,
+      width: _morphed ? 260 : 160,
       height: _morphed ? 140 : 56,
       decoration: BoxDecoration(
         color: currentButtonBg,
@@ -196,23 +217,30 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
           ),
         ],
         border: Border.all(
-          color: !_morphed ? currentButtonFg.withOpacity(0.18) : const Color(0xFFb6c1d1),
+          color:
+              !_morphed
+                  ? currentButtonFg.withOpacity(0.18)
+                  : const Color(0xFFb6c1d1),
           width: 1.2,
         ),
       ),
-      child: Stack( // Use Stack to overlay the hidden TextField
+      child: Stack(
+        // Use Stack to overlay the hidden TextField
         children: [
           // Hidden TextField to capture caliper input
           // It's placed here so it's part of the widget tree and can receive focus/input
           Positioned.fill(
             child: Opacity(
               opacity: 0.0, // Make it completely invisible
-              child: AbsorbPointer( // Prevent user from manually typing into it
-                absorbing: !_checking, // Only absorb if not checking (so listener can work when checking)
+              child: AbsorbPointer(
+                // Prevent user from manually typing into it
+                absorbing:
+                    !_checking, // Only absorb if not checking (so listener can work when checking)
                 child: TextField(
                   controller: _caliperInputController,
                   focusNode: _caliperFocusNode,
-                  keyboardType: TextInputType.number, // Hint for numerical input
+                  keyboardType:
+                      TextInputType.number, // Hint for numerical input
                   autofocus: false, // Don't autofocus initially
                   // No decoration needed as it's hidden
                 ),
@@ -221,74 +249,132 @@ class _MorphingDeviceConnectedButtonState extends State<MorphingDeviceConnectedB
           ),
           // Main content of the button
           Center(
-            child: SingleChildScrollView( // Allows content to scroll if it overflows
-              child: _morphed
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_circle, color: currentButtonFg, size: 32), // Use currentButtonFg
-                        const SizedBox(height: 8),
-                        Text(
-                          'Caliper Connected!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: currentButtonFg, // Use currentButtonFg
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: currentButtonFg, // Use currentButtonFg
-                            foregroundColor: currentButtonBg, // Use currentButtonBg
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                            textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+            child: SingleChildScrollView(
+              // Allows content to scroll if it overflows
+              child:
+                  _morphed
+                      ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: currentButtonFg,
+                            size: 32,
+                          ), // Use currentButtonFg
+                          const SizedBox(height: 8),
+                          Text(
+                            'Caliper Connected!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: currentButtonFg, // Use currentButtonFg
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
-                            elevation: 0,
                           ),
-                          onPressed: () {
-                            // Logging: Step 2 continue pressed
-                            // ignore: avoid_print
-                            print('[LOG] Step 2: Continue pressed after device connected');
-                            setState(() {
-                              _morphed = false; // Reset for potential future checks or re-entry
-                              _error = null; // Clear error on continue
-                            });
-                            Future.delayed(const Duration(milliseconds: 350), widget.onComplete);
-                          },
-                          child: const Text('Continue'),
-                        ),
-                      ],
-                    )
-                  : _checking
-                      ? SizedBox( // Changed to SizedBox to apply color to CircularProgressIndicator
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: currentButtonFg), // Use currentButtonFg
-                        )
-                      : Material( // Reverted to original Material/InkWell for consistency
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
-                            onTap: widget.enabled && !_checking ? _initiateCaliperCheck : null,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14), // Add padding for tap area
-                              child: Text(
-                                _error != null ? 'Retry Check' : 'Check Device', // Corrected text logic
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: currentButtonFg, // Use currentButtonFg
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.7,
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  currentButtonFg, // Use currentButtonFg
+                              foregroundColor:
+                                  currentButtonBg, // Use currentButtonBg
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              textStyle: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: () {
+                              // Logging: Step 2 continue pressed
+                              // ignore: avoid_print
+                              print(
+                                '[LOG] Step 2: Continue pressed after device connected',
+                              );
+                              setState(() {
+                                _morphed =
+                                    false; // Reset for potential future checks or re-entry
+                                _error = null; // Clear error on continue
+                              });
+                              Future.delayed(
+                                const Duration(milliseconds: 350),
+                                widget.onComplete,
+                              );
+                            },
+                            child: const Text('Continue'),
+                          ),
+                        ],
+                      )
+                      : _checking
+                      ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: currentButtonFg,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: _stopCaliperCheck,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                child: Text(
+                                  'Stop',
+                                  style: TextStyle(
+                                    color: currentButtonFg,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
+                        ],
+                      )
+                      : Material(
+                        // Reverted to original Material/InkWell for consistency
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap:
+                              widget.enabled && !_checking
+                                  ? _initiateCaliperCheck
+                                  : null,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                            ), // Add padding for tap area
+                            child: Text(
+                              _error != null
+                                  ? 'Retry Check'
+                                  : 'Check Device', // Corrected text logic
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: currentButtonFg, // Use currentButtonFg
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.7,
+                              ),
+                            ),
+                          ),
                         ),
+                      ),
             ),
           ),
         ],

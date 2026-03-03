@@ -7,15 +7,18 @@ import 'home_content.dart';
 import 'config/app_theme.dart';
 import 'services/app_lifecycle_service.dart';
 import 'services/session_service.dart';
+import 'pages/measurement_category_page.dart';
 
 class BvmManualInspectionStationApp extends StatefulWidget {
   const BvmManualInspectionStationApp({super.key});
 
   @override
-  State<BvmManualInspectionStationApp> createState() => _BvmManualInspectionStationAppState();
+  State<BvmManualInspectionStationApp> createState() =>
+      _BvmManualInspectionStationAppState();
 }
 
-class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStationApp> {
+class _BvmManualInspectionStationAppState
+    extends State<BvmManualInspectionStationApp> {
   final FocusNode _focusNode = FocusNode();
   bool _isFullScreen = false;
   final AppLifecycleService _lifecycleService = AppLifecycleService();
@@ -38,12 +41,14 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
   Future<void> _checkExistingSession() async {
     try {
       _log('_checkExistingSession: Starting session check');
-      
+
       final session = await SessionService.getSessionStatus();
-      
+
       if (session != null) {
         if (session.status == 'pending_calibration') {
-          print('[LOG] Found incomplete session, user needs to complete calibration');
+          print(
+            '[LOG] Found incomplete session, user needs to complete calibration',
+          );
           // You could show a dialog or navigate to calibration here
         } else if (session.status == 'calibrated') {
           // Session completed, clean up
@@ -59,7 +64,7 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
       // Continue without session - app should still work
     }
   }
-  
+
   void _log(String message) {
     print('[App] $message');
   }
@@ -67,7 +72,7 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
   Future<void> _checkFullscreenStatus() async {
     if (kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
-    
+
     _isFullScreen = await windowManager.isFullScreen();
     setState(() {});
   }
@@ -75,23 +80,20 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
   Future<void> _exitFullscreenIfNeeded() async {
     if (kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
-    
+
     final bool isFs = await windowManager.isFullScreen();
     if (isFs) {
       await windowManager.setFullScreen(false);
       await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-      
+
       // Use 80% of screen size for windowed mode instead of fixed size
       final screen = MediaQuery.of(context);
       final screenSize = screen.size;
-      final windowSize = Size(
-        screenSize.width * 0.8, 
-        screenSize.height * 0.8
-      );
-      
+      final windowSize = Size(screenSize.width * 0.8, screenSize.height * 0.8);
+
       await windowManager.setSize(windowSize);
       await windowManager.center();
-      
+
       setState(() {
         _isFullScreen = false;
       });
@@ -113,25 +115,27 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
   Widget build(BuildContext context) {
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.escape): _exitFullscreenIfNeeded,
+        const SingleActivator(LogicalKeyboardKey.escape):
+            _exitFullscreenIfNeeded,
         // Add F11 to toggle fullscreen
         const SingleActivator(LogicalKeyboardKey.f11): () async {
-          if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+          if (!kIsWeb &&
+              (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
             final isFs = await windowManager.isFullScreen();
-            
+
             if (isFs) {
               // Exit fullscreen
               await windowManager.setFullScreen(false);
               await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-              
+
               // Use 80% of screen size for windowed mode
               final screen = MediaQuery.of(context);
               final screenSize = screen.size;
               final windowSize = Size(
-                screenSize.width * 0.8, 
-                screenSize.height * 0.8
+                screenSize.width * 0.8,
+                screenSize.height * 0.8,
               );
-              
+
               await windowManager.setSize(windowSize);
               await windowManager.center();
             } else {
@@ -139,7 +143,7 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
               await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
               await windowManager.setFullScreen(true);
             }
-            
+
             setState(() {
               _isFullScreen = !isFs;
             });
@@ -153,11 +157,16 @@ class _BvmManualInspectionStationAppState extends State<BvmManualInspectionStati
           title: 'BVM Manual Inspection Station',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.themeData,
-          home: FullscreenAwareWidget(
-            isFullScreen: _isFullScreen,
-            onStateChanged: _forceRefreshInFullscreen,
-            child: const OnboardingScreen(),
-          ),
+          initialRoute: '/',
+          routes: {
+            '/':
+                (context) => FullscreenAwareWidget(
+                  isFullScreen: _isFullScreen,
+                  onStateChanged: _forceRefreshInFullscreen,
+                  child: const OnboardingScreen(),
+                ),
+            '/dashboard': (context) => const DashboardPage(),
+          },
         ),
       ),
     );
@@ -185,7 +194,7 @@ class _FullscreenAwareWidgetState extends State<FullscreenAwareWidget> {
   @override
   void didUpdateWidget(FullscreenAwareWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Force repaint when fullscreen status changes
     if (oldWidget.isFullScreen != widget.isFullScreen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -201,7 +210,9 @@ class _FullscreenAwareWidgetState extends State<FullscreenAwareWidget> {
   Widget build(BuildContext context) {
     // Wrap in RepaintBoundary to force repaints in fullscreen
     return RepaintBoundary(
-      key: ValueKey(widget.isFullScreen), // Force rebuild when fullscreen changes
+      key: ValueKey(
+        widget.isFullScreen,
+      ), // Force rebuild when fullscreen changes
       child: widget.child,
     );
   }

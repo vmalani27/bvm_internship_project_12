@@ -10,6 +10,7 @@ class MeasurementInputWidget extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onBack;
   final VoidCallback onCaliperCheckPressed;
+  final VoidCallback onCaliperStopPressed;
   final Color accent;
   final FocusNode caliperFocusNode;
   final bool isCaliperChecking;
@@ -23,6 +24,7 @@ class MeasurementInputWidget extends StatelessWidget {
     required this.onNext,
     required this.onBack,
     required this.onCaliperCheckPressed,
+    required this.onCaliperStopPressed,
     required this.accent,
     required this.caliperFocusNode,
     required this.isCaliperChecking,
@@ -51,17 +53,21 @@ class MeasurementInputWidget extends StatelessWidget {
     }
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.cardBg,
-        title: Text('Measurement Info', style: TextStyle(color: AppTheme.textDark)),
-        content: Text(infoText, style: TextStyle(color: AppTheme.textDark)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Close', style: TextStyle(color: AppTheme.primary)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.cardBg,
+            title: Text(
+              'Measurement Info',
+              style: TextStyle(color: AppTheme.textDark),
+            ),
+            content: Text(infoText, style: TextStyle(color: AppTheme.textDark)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Close', style: TextStyle(color: AppTheme.primary)),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -69,7 +75,7 @@ class MeasurementInputWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color textColor = AppTheme.textDark;
     final Color cardBg = AppTheme.cardBg;
-    
+
     return Stack(
       children: [
         Container(
@@ -82,10 +88,7 @@ class MeasurementInputWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: cardBg.withOpacity(0.95),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -124,24 +127,33 @@ class MeasurementInputWidget extends StatelessWidget {
               TextFormField(
                 key: ValueKey('input_$label'),
                 controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 style: TextStyle(fontSize: 16, color: textColor),
                 // Add an onTap callback to the TextFormField.
                 onTap: () {
                   // This is the new fallback logic:
                   // Only trigger the caliper if the field is empty.
                   if (controller.text.isEmpty) {
-                    developer.log('[Widget] TextFormField tapped to trigger caliper');
+                    developer.log(
+                      '[Widget] TextFormField tapped to trigger caliper',
+                    );
                     onCaliperCheckPressed();
                   }
                 },
                 decoration: InputDecoration(
                   hintText: hint,
                   hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: accent.withOpacity(0.3), width: 1.5),
+                    borderSide: BorderSide(
+                      color: accent.withOpacity(0.3),
+                      width: 1.5,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -149,30 +161,58 @@ class MeasurementInputWidget extends StatelessWidget {
                   ),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.05),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                  suffixIcon: IconButton(
-                    icon: isCaliperChecking
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
-                          )
-                        : Icon(Icons.straighten_rounded, color: accent),
-                    // The dedicated button can still be used to re-trigger a measurement
-                    onPressed: isCaliperChecking ? null : () {
-                      developer.log('[Widget] Caliper button pressed');
-                      onCaliperCheckPressed();
-                    },
-                    tooltip: 'Start caliper measurement',
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
                   ),
-                  prefixIcon: isCaliperChecking ? IconButton(
-                    icon: Icon(Icons.bug_report, color: Colors.orange),
-                    onPressed: () {
-                      developer.log('[Widget] Test input button pressed');
-                      controller.text = '25.50';
-                    },
-                    tooltip: 'Test caliper input',
-                  ) : null,
+                  suffixIcon:
+                      isCaliperChecking
+                          ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: AppTheme.error,
+                                ),
+                                onPressed: onCaliperStopPressed,
+                                tooltip: 'Stop checking',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          )
+                          : IconButton(
+                            icon: Icon(Icons.straighten_rounded, color: accent),
+                            onPressed: () {
+                              developer.log('[Widget] Caliper button pressed');
+                              onCaliperCheckPressed();
+                            },
+                            tooltip: 'Start caliper measurement',
+                          ),
+                  prefixIcon:
+                      isCaliperChecking
+                          ? IconButton(
+                            icon: Icon(Icons.bug_report, color: Colors.orange),
+                            onPressed: () {
+                              developer.log(
+                                '[Widget] Test input button pressed',
+                              );
+                              controller.text = '25.50';
+                            },
+                            tooltip: 'Test caliper input',
+                          )
+                          : null,
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -219,11 +259,7 @@ class MeasurementInputWidget extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  cardBg.withOpacity(0),
-                  cardBg,
-                  cardBg,
-                ],
+                colors: [cardBg.withOpacity(0), cardBg, cardBg],
               ),
             ),
             child: Row(
@@ -246,7 +282,10 @@ class MeasurementInputWidget extends StatelessWidget {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accent.withOpacity(0.8),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 20,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -259,10 +298,7 @@ class MeasurementInputWidget extends StatelessWidget {
                         developer.log('[Input] Clear measurement requested');
                         controller.clear();
                       },
-                      icon: const Icon(
-                        Icons.clear,
-                        color: Colors.white,
-                      ),
+                      icon: const Icon(Icons.clear, color: Colors.white),
                       label: const Text(
                         'Clear',
                         style: TextStyle(
@@ -274,7 +310,10 @@ class MeasurementInputWidget extends StatelessWidget {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white.withOpacity(0.1),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 20,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -284,13 +323,19 @@ class MeasurementInputWidget extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         if (controller.text.isNotEmpty) {
-                          developer.log('[Input] Next pressed with value: ${controller.text}');
+                          developer.log(
+                            '[Input] Next pressed with value: ${controller.text}',
+                          );
                           onNext();
                         } else {
-                          developer.log('[Input] Next pressed but no measurement entered');
+                          developer.log(
+                            '[Input] Next pressed but no measurement entered',
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Please enter a measurement before proceeding'),
+                              content: Text(
+                                'Please enter a measurement before proceeding',
+                              ),
                               duration: Duration(seconds: 2),
                             ),
                           );
@@ -298,7 +343,10 @@ class MeasurementInputWidget extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accent,
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 20,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -317,7 +365,9 @@ class MeasurementInputWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Icon(
-                            isLastStep ? Icons.check_rounded : Icons.arrow_forward_rounded,
+                            isLastStep
+                                ? Icons.check_rounded
+                                : Icons.arrow_forward_rounded,
                             color: Colors.white,
                           ),
                         ],

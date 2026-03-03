@@ -2,10 +2,13 @@ import 'dart:ui';
 import 'package:bvm_manual_inspection_station/config/app_config.dart';
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
+import '../elements/common_elements/common_appbar.dart';
 import '../models/user_session.dart';
+import '../services/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PastMeasurementsPage extends StatefulWidget {
   const PastMeasurementsPage({super.key});
@@ -14,36 +17,19 @@ class PastMeasurementsPage extends StatefulWidget {
   State<PastMeasurementsPage> createState() => _PastMeasurementsPageState();
 }
 
-class _PastMeasurementsPageState extends State<PastMeasurementsPage> with TickerProviderStateMixin {
+class _PastMeasurementsPageState extends State<PastMeasurementsPage> {
   String? get userRollNumber => UserSession.rollNumber;
   String? get userName => UserSession.name;
   bool isLoading = true;
   Map<String, dynamic>? data;
   String? error;
-
-  
-  late AnimationController _titleController;
-  late AnimationController _contentController;
-  late Animation<double> _titleAnimation;
-  late Animation<double> _contentAnimation;
+  // Tracks which measurement type is currently being exported (null = idle)
+  String? _exportingType;
 
   @override
   void initState() {
     super.initState();
-    
-    _titleController = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    _contentController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
-    
-    _titleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic)
-    );
-    _contentAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _contentController, curve: Curves.easeOutBack)
-    );
-    
-    _titleController.forward();
-    Future.delayed(const Duration(milliseconds: 300), () => _contentController.forward());
-    
+
     if (userRollNumber == null) {
       setState(() {
         error = 'User not logged in.';
@@ -56,15 +42,12 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
     super.dispose();
   }
 
   double _getColumnWidth(String columnName) {
     // Define specific widths for different column types
     switch (columnName.toLowerCase()) {
-      case 'id':
       case 'unit_id':
         return 80;
       case 'timestamp':
@@ -114,7 +97,40 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
     });
   }
 
-  Widget buildMeasurementCard(String title, List<Map<String, dynamic>> rows, Color accentColor) {
+  Future<void> _exportCsv(String type) async {
+    final roll = userRollNumber;
+    if (roll == null) return;
+    setState(() => _exportingType = type);
+    try {
+      final url = await ApiService.exportCsv(type: type, rollNumber: roll);
+      if (!mounted) return;
+      if (url == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Export failed — please try again')),
+        );
+      } else {
+        // Open the presigned URL in a new browser tab
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open download URL')),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _exportingType = null);
+    }
+  }
+
+  Widget buildMeasurementCard(
+    String title,
+    List<Map<String, dynamic>> rows,
+    Color accentColor,
+    String measurementType, // 'shaft' or 'housing'
+  ) {
     if (rows.isEmpty) return const SizedBox();
 
     final List<String> columns = rows.first.keys.toList();
@@ -128,10 +144,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
       margin: const EdgeInsets.only(bottom: 32),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.15),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -176,7 +189,9 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    title.contains('Shaft') ? Icons.settings_rounded : Icons.straighten_rounded,
+                    title.contains('Shaft')
+                        ? Icons.settings_rounded
+                        : Icons.straighten_rounded,
                     size: 22,
                     color: accentColor,
                   ),
@@ -194,18 +209,48 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                 const Spacer(),
                 Container(
                   margin: const EdgeInsets.only(right: 12),
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: accentColor,
-                      side: BorderSide(color: accentColor.withOpacity(0.6), width: 1),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      backgroundColor: accentColor.withOpacity(0.08),
-                    ),
-                    icon: const Icon(Icons.download_rounded, size: 18),
-                    label: const Text('Export', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                  ),
+                  child:
+                      _exportingType == measurementType
+                          ? Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accentColor,
+                              ),
+                            ),
+                          )
+                          : OutlinedButton.icon(
+                            onPressed: () => _exportCsv(measurementType),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: accentColor,
+                              side: BorderSide(
+                                color: accentColor.withOpacity(0.6),
+                                width: 1,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              backgroundColor: accentColor.withOpacity(0.08),
+                            ),
+                            icon: const Icon(Icons.download_rounded, size: 18),
+                            label: const Text(
+                              'Export CSV',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                 ),
                 // Container(
                 //   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -234,12 +279,13 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                 // When expanding: either distribute extra proportionally or evenly for shaft.
                 double widthFor(String col) {
                   // Divide the container width equally among all columns
-                  final double inner = avail - 48; // account for horizontal margin/padding
+                  final double inner =
+                      avail - 48; // account for horizontal margin/padding
                   return inner / columns.length;
                 }
 
                 final table = DataTable(
-                    columnSpacing: 8.0, // Reduced space between columns
+                  columnSpacing: 8.0, // Reduced space between columns
                   horizontalMargin: 24,
                   headingRowHeight: 54,
                   dataRowMinHeight: 44,
@@ -252,64 +298,98 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                       width: 1,
                     ),
                   ),
-                  columns: columns.map((c) => DataColumn(
-                    label: SizedBox(
-                      width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-                        child: Text(
-                          c.replaceAll('_', ' ').toUpperCase(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textDark.withOpacity(0.85),
-                            fontSize: 12,
-                            letterSpacing: 0.6,
-                          ),
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                  )).toList(),
-                  rows: rows.map((row) => DataRow(
-                    cells: columns.map((c) {
-                      final val = row[c];
-                      String displayValue;
-                      if (c.toLowerCase() == 'timestamp' && val != null) {
-                        try {
-                          // Try to parse and format the timestamp
-                          final dt = val is DateTime ? val : DateTime.tryParse(val.toString());
-                          if (dt != null) {
-                            displayValue = DateFormat('dd MMM yyyy, hh:mm a').format(dt);
-                          } else {
-                            displayValue = val.toString();
-                          }
-                        } catch (_) {
-                          displayValue = val.toString();
-                        }
-                      } else {
-                        displayValue = val?.toString() ?? '';
-                      }
-                      return DataCell(
-                        SizedBox(
-                          width: c.toLowerCase() == 'timestamp' ? 160 : widthFor(c),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                            child: Text(
-                              displayValue,
-                              style: TextStyle(
-                                color: AppTheme.textDark.withOpacity(0.92),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                  columns:
+                      columns
+                          .map(
+                            (c) => DataColumn(
+                              label: SizedBox(
+                                width:
+                                    c.toLowerCase() == 'timestamp'
+                                        ? 160
+                                        : widthFor(c),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                    horizontal: 8,
+                                  ),
+                                  child: Text(
+                                    c.replaceAll('_', ' ').toUpperCase(),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.textDark.withOpacity(
+                                        0.85,
+                                      ),
+                                      fontSize: 12,
+                                      letterSpacing: 0.6,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  )).toList(),
+                          )
+                          .toList(),
+                  rows:
+                      rows
+                          .map(
+                            (row) => DataRow(
+                              cells:
+                                  columns.map((c) {
+                                    final val = row[c];
+                                    String displayValue;
+                                    if (c.toLowerCase() == 'timestamp' &&
+                                        val != null) {
+                                      try {
+                                        // Try to parse and format the timestamp
+                                        final dt =
+                                            val is DateTime
+                                                ? val
+                                                : DateTime.tryParse(
+                                                  val.toString(),
+                                                );
+                                        if (dt != null) {
+                                          displayValue = DateFormat(
+                                            'dd MMM yyyy, hh:mm a',
+                                          ).format(dt);
+                                        } else {
+                                          displayValue = val.toString();
+                                        }
+                                      } catch (_) {
+                                        displayValue = val.toString();
+                                      }
+                                    } else {
+                                      displayValue = val?.toString() ?? '';
+                                    }
+                                    return DataCell(
+                                      SizedBox(
+                                        width:
+                                            c.toLowerCase() == 'timestamp'
+                                                ? 160
+                                                : widthFor(c),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 10,
+                                            horizontal: 8,
+                                          ),
+                                          child: Text(
+                                            displayValue,
+                                            style: TextStyle(
+                                              color: AppTheme.textDark
+                                                  .withOpacity(0.92),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          )
+                          .toList(),
                 );
 
                 return Container(
@@ -329,15 +409,16 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                       ],
                     ),
                   ),
-                  child: needsScroll
-                      ? SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(minWidth: baseSum),
-                            child: table,
-                          ),
-                        )
-                      : table,
+                  child:
+                      needsScroll
+                          ? SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: baseSum),
+                              child: table,
+                            ),
+                          )
+                          : table,
                 );
               },
             ),
@@ -354,7 +435,7 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
     final Color accent = AppTheme.primary;
     final Color secondary = AppTheme.secondary;
     final Color textColor = AppTheme.textDark;
-    
+
     return Scaffold(
       backgroundColor: bgColor,
       body: Container(
@@ -372,69 +453,8 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
         child: SafeArea(
           child: Column(
             children: [
-              // Custom AppBar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                decoration: BoxDecoration(
-                  color: cardBg.withOpacity(0.95),
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: Icon(Icons.arrow_back_ios_rounded, color: textColor),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Past Measurements',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          if (userName != null)
-                            Text(
-                              'User: $userName ($userRollNumber)',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: textColor.withOpacity(0.7),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (isLoading)
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: accent,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              
+              const BvmAppBar(title: 'History', showBackButton: true),
+
               Expanded(
                 child: Center(
                   child: Container(
@@ -443,283 +463,297 @@ class _PastMeasurementsPageState extends State<PastMeasurementsPage> with Ticker
                       maxWidth: () {
                         final w = MediaQuery.of(context).size.width;
                         final target = w * 0.95; // use 95% of available width
-                        final capped = target > 1500 ? 1500 : target; // cap at 1500 for ultra-wide
+                        final capped =
+                            target > 1500
+                                ? 1500
+                                : target; // cap at 1500 for ultra-wide
                         return capped.toDouble();
                       }(),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                    child: isLoading
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      accent.withOpacity(0.15),
-                                      accent.withOpacity(0.05),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 20,
+                    ),
+                    child:
+                        isLoading
+                            ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        accent.withOpacity(0.15),
+                                        accent.withOpacity(0.05),
+                                      ],
+                                    ),
+                                  ),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 3,
+                                    color: accent,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                Text(
+                                  'Loading measurements...',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: textColor.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            )
+                            : error != null
+                            ? ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 20,
+                                  sigmaY: 20,
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.error.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: AppTheme.error.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(32),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline_rounded,
+                                        size: 48,
+                                        color: AppTheme.error,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Error Loading Data',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        error!,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: textColor.withOpacity(0.7),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                      ElevatedButton.icon(
+                                        onPressed: fetchMeasurements,
+                                        icon: const Icon(Icons.refresh_rounded),
+                                        label: const Text('Retry'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.error,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                            vertical: 12,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                  color: accent,
-                                ),
                               ),
-                              const SizedBox(height: 24),
-                              Text(
-                                'Loading measurements...',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColor.withOpacity(0.8),
-                                ),
-                              ),
-                            ],
-                          )
-                        : error != null
+                            )
+                            : (data == null ||
+                                (data!['shaft_measurements']?.isEmpty ??
+                                        true) &&
+                                    (data!['housing_measurements']?.isEmpty ??
+                                        true))
                             ? ClipRRect(
-                                borderRadius: BorderRadius.circular(24),
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                                  child: Container(
+                              borderRadius: BorderRadius.circular(24),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 20,
+                                  sigmaY: 20,
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: cardBg.withOpacity(0.95),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(32),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              accent.withOpacity(0.15),
+                                              accent.withOpacity(0.05),
+                                            ],
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.inbox_rounded,
+                                          size: 40,
+                                          color: accent,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No Measurements Found',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: textColor,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Start measuring components to see your history here.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: textColor.withOpacity(0.7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                            : SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 24),
+                                    padding: const EdgeInsets.all(24),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.error.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(24),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          cardBg.withOpacity(0.95),
+                                          cardBg.withOpacity(0.98),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: AppTheme.error.withOpacity(0.2),
+                                        color: Colors.white.withOpacity(0.2),
                                         width: 1,
                                       ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ],
                                     ),
-                                    padding: const EdgeInsets.all(32),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
+                                    child: Row(
                                       children: [
-                                        Icon(
-                                          Icons.error_outline_rounded,
-                                          size: 48,
-                                          color: AppTheme.error,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Error Loading Data',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: textColor,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          error!,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: textColor.withOpacity(0.7),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 20),
-                                        ElevatedButton.icon(
-                                          onPressed: fetchMeasurements,
-                                          icon: const Icon(Icons.refresh_rounded),
-                                          label: const Text('Retry'),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.error,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                accent.withOpacity(0.2),
+                                                accent.withOpacity(0.1),
+                                              ],
                                             ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.history_rounded,
+                                            size: 24,
+                                            color: accent,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Measurement History',
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: textColor,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                              ),
+                                              Text(
+                                                'View all your previous measurements',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: textColor.withOpacity(
+                                                    0.7,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              )
-                            : (data == null || (data!['shaft_measurements']?.isEmpty ?? true) && (data!['housing_measurements']?.isEmpty ?? true))
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(24),
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: cardBg.withOpacity(0.95),
-                                          borderRadius: BorderRadius.circular(24),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(0.2),
-                                            width: 1,
-                                          ),
+                                  Column(
+                                    children: [
+                                      buildMeasurementCard(
+                                        'Shaft Measurements',
+                                        List<Map<String, dynamic>>.from(
+                                          data!['shaft_measurements'] ?? [],
                                         ),
-                                        padding: const EdgeInsets.all(32),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.all(20),
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                  colors: [
-                                                    accent.withOpacity(0.15),
-                                                    accent.withOpacity(0.05),
-                                                  ],
-                                                ),
-                                              ),
-                                              child: Icon(
-                                                Icons.inbox_rounded,
-                                                size: 40,
-                                                color: accent,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 16),
-                                            Text(
-                                              'No Measurements Found',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: textColor,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'Start measuring components to see your history here.',
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: textColor.withOpacity(0.7),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                        accent,
+                                        'shaft',
                                       ),
-                                    ),
-                                  )
-                                : SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        AnimatedBuilder(
-                                          animation: _titleAnimation,
-                                          builder: (context, child) {
-                                            return Opacity(
-                                              opacity: _titleAnimation.value,
-                                              child: Transform.translate(
-                                                offset: Offset(0, 20 * (1 - _titleAnimation.value)),
-                                                child: Container(
-                                                  margin: const EdgeInsets.only(bottom: 24),
-                                                  padding: const EdgeInsets.all(24),
-                                                  decoration: BoxDecoration(
-                                                    gradient: LinearGradient(
-                                                      begin: Alignment.topLeft,
-                                                      end: Alignment.bottomRight,
-                                                      colors: [
-                                                        cardBg.withOpacity(0.95),
-                                                        cardBg.withOpacity(0.98),
-                                                      ],
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(20),
-                                                    border: Border.all(
-                                                      color: Colors.white.withOpacity(0.2),
-                                                      width: 1,
-                                                    ),
-                                                    boxShadow: [
-                                                      BoxShadow(
-                                                        color: Colors.black.withOpacity(0.1),
-                                                        blurRadius: 15,
-                                                        offset: const Offset(0, 5),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      Container(
-                                                        padding: const EdgeInsets.all(12),
-                                                        decoration: BoxDecoration(
-                                                          gradient: LinearGradient(
-                                                            begin: Alignment.topLeft,
-                                                            end: Alignment.bottomRight,
-                                                            colors: [
-                                                              accent.withOpacity(0.2),
-                                                              accent.withOpacity(0.1),
-                                                            ],
-                                                          ),
-                                                          borderRadius: BorderRadius.circular(12),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.history_rounded,
-                                                          size: 24,
-                                                          color: accent,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 16),
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          children: [
-                                                            Text(
-                                                              'Measurement History',
-                                                              style: TextStyle(
-                                                                fontSize: 18,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: textColor,
-                                                                letterSpacing: 0.5,
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              'View all your previous measurements',
-                                                              style: TextStyle(
-                                                                fontSize: 14,
-                                                                fontWeight: FontWeight.w500,
-                                                                color: textColor.withOpacity(0.7),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
+                                      buildMeasurementCard(
+                                        'Housing Measurements',
+                                        List<Map<String, dynamic>>.from(
+                                          data!['housing_measurements'] ?? [],
                                         ),
-                                        AnimatedBuilder(
-                                          animation: _contentAnimation,
-                                          builder: (context, child) {
-                                            return Transform.scale(
-                                              scale: _contentAnimation.value,
-                                              child: Column(
-                                                children: [
-                                                  buildMeasurementCard(
-                                                    'Shaft Measurements',
-                                                    List<Map<String, dynamic>>.from(data!['shaft_measurements'] ?? []),
-                                                    accent,
-                                                  ),
-                                                  buildMeasurementCard(
-                                                    'Housing Measurements',
-                                                    List<Map<String, dynamic>>.from(data!['housing_measurements'] ?? []),
-                                                    secondary,
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
+                                        secondary,
+                                        'housing',
+                                      ),
+                                    ],
                                   ),
+                                ],
+                              ),
+                            ),
                   ),
                 ),
               ),
             ],
-                        ),
+          ),
         ),
       ),
     );

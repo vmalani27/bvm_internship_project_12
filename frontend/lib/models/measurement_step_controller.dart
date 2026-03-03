@@ -11,7 +11,7 @@ class MeasurementStepController extends ChangeNotifier {
   final FocusNode caliperFocusNode = FocusNode();
   Timer? _checkTimeoutTimer;
   Timer? _inputCompletionTimer;
-  
+
   // Make the field public instead of private
   bool isCaliperChecking = false;
   String? caliperError;
@@ -28,26 +28,32 @@ class MeasurementStepController extends ChangeNotifier {
 
   void _setupFocusListener() {
     caliperFocusNode.addListener(() {
-      developer.log('[Caliper] Focus changed - hasFocus: ${caliperFocusNode.hasFocus}');
+      developer.log(
+        '[Caliper] Focus changed - hasFocus: ${caliperFocusNode.hasFocus}',
+      );
     });
   }
 
   void _setupCaliperInput() {
     developer.log('[Controller] Setting up caliper input listener');
     measurementController.addListener(() {
-      developer.log('[Caliper] Input listener triggered - isCaliperChecking: $isCaliperChecking');
-      
+      developer.log(
+        '[Caliper] Input listener triggered - isCaliperChecking: $isCaliperChecking',
+      );
+
       if (!isCaliperChecking) {
         developer.log('[Caliper] Ignored: Not in checking state');
         return;
       }
 
       String currentText = measurementController.text;
-      developer.log('[Caliper] Raw input: "$currentText" (Length: ${currentText.length})');
+      developer.log(
+        '[Caliper] Raw input: "$currentText" (Length: ${currentText.length})',
+      );
 
       // Cancel previous timer
       _inputCompletionTimer?.cancel();
-      
+
       // Set a timer to process the input after a brief pause
       _inputCompletionTimer = Timer(const Duration(milliseconds: 150), () {
         if (isCaliperChecking) {
@@ -61,24 +67,24 @@ class MeasurementStepController extends ChangeNotifier {
   void _handleStepChange() {
     developer.log('[Controller] Step changed to: ${model.currentStep}');
     final field = model.currentField;
-    isCaliperChecking = false;  // Reset checking state on step change
+    isCaliperChecking = false; // Reset checking state on step change
     measurementController.text = model.measurements[field] ?? '';
     notifyListeners();
   }
 
   void initiateCaliperCheck(BuildContext context) {
     developer.log('[Caliper] Starting check for step ${model.currentStep}');
-    
+
     isCaliperChecking = true;
     caliperError = null;
     measurementController.clear();
-    
+
     // Request focus with a delay to ensure the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(caliperFocusNode);
       developer.log('[Caliper] Focus requested for caliper input');
     });
-    
+
     // Set timeout
     _checkTimeoutTimer?.cancel();
     _checkTimeoutTimer = Timer(const Duration(seconds: 10), () {
@@ -91,24 +97,34 @@ class MeasurementStepController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void stopCaliperCheck() {
+    developer.log('[Caliper] Stopping check manually');
+    isCaliperChecking = false;
+    caliperError = 'cancelled';
+    caliperFocusNode.unfocus();
+    _checkTimeoutTimer?.cancel();
+    _inputCompletionTimer?.cancel();
+    notifyListeners();
+  }
+
   void _processCaliperMeasurement(String measurementText) {
     if (!isCaliperChecking) {
       developer.log('[Caliper] Processing cancelled - not in checking state');
       return; // Prevent processing when not checking
     }
-    
+
     developer.log('[Caliper] Processing measurement: "$measurementText"');
     _checkTimeoutTimer?.cancel();
     String dimension = measurementText.trim();
-    
+
     // Clear the input controller and request focus for next input
     measurementController.clear();
     caliperFocusNode.requestFocus();
-    
+
     if (dimension.isNotEmpty && double.tryParse(dimension) != null) {
       developer.log('[Caliper] Valid measurement: $dimension');
       model.measurements[model.currentField] = dimension;
-      isCaliperChecking = false;  // Update state
+      isCaliperChecking = false; // Update state
       caliperFocusNode.unfocus();
 
       if (model.currentStep >= model.steps.length - 1) {
@@ -118,7 +134,9 @@ class MeasurementStepController extends ChangeNotifier {
       }
       notifyListeners();
     } else {
-      developer.log('[Caliper] Invalid measurement or empty input: "$dimension"');
+      developer.log(
+        '[Caliper] Invalid measurement or empty input: "$dimension"',
+      );
       // Don't clear the controller here as it's already cleared above
       // Keep focus for retry
       caliperFocusNode.requestFocus();
@@ -126,30 +144,35 @@ class MeasurementStepController extends ChangeNotifier {
   }
 
   void _handleCaliperTimeout(BuildContext context) {
-    isCaliperChecking = false;  // Update state
-    caliperFocusNode.unfocus();
-    notifyListeners();
-    
+    stopCaliperCheck();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.cardBg,
-        title: Text('Caliper Not Detected', style: TextStyle(color: AppTheme.textDark)),
-        content: Text('Please ensure your caliper is connected and try again.', style: TextStyle(color: AppTheme.textDark)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('OK', style: TextStyle(color: AppTheme.primary)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: AppTheme.cardBg,
+            title: Text(
+              'Caliper Not Detected',
+              style: TextStyle(color: AppTheme.textDark),
+            ),
+            content: Text(
+              'Please ensure your caliper is connected and try again.',
+              style: TextStyle(color: AppTheme.textDark),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('OK', style: TextStyle(color: AppTheme.primary)),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void goNextStep() {
     developer.log('[Controller] Going to next step');
     final currentValue = measurementController.text.trim();
-    
+
     if (currentValue.isNotEmpty) {
       model.measurements[model.currentField] = currentValue;
     }
@@ -178,11 +201,10 @@ class MeasurementStepController extends ChangeNotifier {
     measurementController.clear();
     isCaliperChecking = false;
     caliperError = null;
-    model.reset();  // This should reset the model's state
+    model.reset(); // This should reset the model's state
     notifyListeners();
   }
 
-  
   void clearCurrentMeasurement() {
     developer.log('[Controller] Clearing current measurement');
     measurementController.clear();

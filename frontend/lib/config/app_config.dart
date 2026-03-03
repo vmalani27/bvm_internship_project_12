@@ -1,11 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dotenv/dotenv.dart';
 
 class AppConfig {
   // URLs for different platforms
   static const String backendBaseUrlWindows = 'http://127.0.0.1:8000';
   static const String backendBaseUrlAndroid = 'http://172.29.250.34:5000';
-  
+
   // Updated production URL
   static const String backendBaseUrlProd = 'http://pcbis.flashstudios.tech';
 
@@ -16,7 +17,9 @@ class AppConfig {
   static String get backendBaseUrl {
     if (isProduction) return backendBaseUrlProd;
 
-    if (Platform.isAndroid) {
+    if (kIsWeb) {
+      return backendBaseUrlWindows; // Or desired default web URL
+    } else if (Platform.isAndroid) {
       return backendBaseUrlAndroid;
     } else if (Platform.isWindows) {
       return backendBaseUrlWindows;

@@ -11,9 +11,7 @@ class ApiService {
     try {
       developer.log('[API] Fetching housing types');
       final response = await http
-          .get(
-            Uri.parse('${AppConfig.backendBaseUrl}/housing_types'),
-          )
+          .get(Uri.parse('${AppConfig.backendBaseUrl}/housing_types'))
           .timeout(_timeout);
 
       if (response.statusCode == 200) {
@@ -22,7 +20,9 @@ class ApiService {
         developer.log('[API] Housing types received: $types');
         return types.cast<String>();
       } else {
-        developer.log('[API] Error fetching housing types: ${response.statusCode}');
+        developer.log(
+          '[API] Error fetching housing types: ${response.statusCode}',
+        );
         throw Exception('Failed to load housing types: ${response.statusCode}');
       }
     } catch (e) {
@@ -37,7 +37,9 @@ class ApiService {
       developer.log('[API] Fetching videos for housing type: $housingType');
       final response = await http
           .get(
-            Uri.parse('${AppConfig.backendBaseUrl}/video/housing_types/$housingType'),
+            Uri.parse(
+              '${AppConfig.backendBaseUrl}/video/housing_types/$housingType',
+            ),
           )
           .timeout(_timeout);
 
@@ -46,8 +48,12 @@ class ApiService {
         developer.log('[API] Videos for $housingType: $videos');
         return videos.cast<String>();
       } else {
-        developer.log('[API] Error fetching videos for $housingType: ${response.statusCode}');
-        throw Exception('Failed to load videos for $housingType: ${response.statusCode}');
+        developer.log(
+          '[API] Error fetching videos for $housingType: ${response.statusCode}',
+        );
+        throw Exception(
+          'Failed to load videos for $housingType: ${response.statusCode}',
+        );
       }
     } catch (e) {
       developer.log('[API] Exception in getHousingVideos: $e');
@@ -60,9 +66,7 @@ class ApiService {
     try {
       developer.log('[API] Fetching shaft videos');
       final response = await http
-          .get(
-            Uri.parse('${AppConfig.backendBaseUrl}/video/list/shaft'),
-          )
+          .get(Uri.parse('${AppConfig.backendBaseUrl}/video/list/shaft'))
           .timeout(_timeout);
 
       if (response.statusCode == 200) {
@@ -70,7 +74,9 @@ class ApiService {
         developer.log('[API] Shaft videos: $videos');
         return videos.cast<String>();
       } else {
-        developer.log('[API] Error fetching shaft videos: ${response.statusCode}');
+        developer.log(
+          '[API] Error fetching shaft videos: ${response.statusCode}',
+        );
         throw Exception('Failed to load shaft videos: ${response.statusCode}');
       }
     } catch (e) {
@@ -121,9 +127,7 @@ class ApiService {
       final response = await http
           .post(
             Uri.parse('${AppConfig.backendBaseUrl}$endpoint'),
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
             body: json.encode(requestBody),
           )
           .timeout(_timeout);
@@ -133,10 +137,12 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-        return result['status'] == 'shaft measurement added' || 
-               result['status'] == 'housing measurement added';
+        return result['status'] == 'shaft measurement added' ||
+            result['status'] == 'housing measurement added';
       } else {
-        developer.log('[API] Error submitting measurement: ${response.statusCode}');
+        developer.log(
+          '[API] Error submitting measurement: ${response.statusCode}',
+        );
         return false;
       }
     } catch (e) {
@@ -150,13 +156,13 @@ class ApiService {
     try {
       developer.log('[API] Testing backend connection');
       final response = await http
-          .get(
-            Uri.parse('${AppConfig.backendBaseUrl}/housing_types'),
-          )
+          .get(Uri.parse('${AppConfig.backendBaseUrl}/housing_types'))
           .timeout(_timeout);
 
       final isConnected = response.statusCode == 200;
-      developer.log('[API] Backend connection test: ${isConnected ? 'SUCCESS' : 'FAILED'}');
+      developer.log(
+        '[API] Backend connection test: ${isConnected ? 'SUCCESS' : 'FAILED'}',
+      );
       return isConnected;
     } catch (e) {
       developer.log('[API] Backend connection test failed: $e');
@@ -164,22 +170,61 @@ class ApiService {
     }
   }
 
-  /// Get video URL for direct streaming
+  /// Fetch a presigned video URL from the backend /play endpoint.
+  /// The backend generates a temporary S3 URL for the given video file.
+  static Future<String?> getPresignedVideoUrl({
+    required String category,
+    required String filename,
+  }) async {
+    try {
+      final url = Uri.parse(
+        '${AppConfig.backendBaseUrl}/video/$category/${Uri.encodeComponent(filename)}/play',
+      );
+      developer.log('[API] Fetching presigned URL: $url');
+      final response = await http.get(url).timeout(_timeout);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final presignedUrl = data['url'] as String?;
+        developer.log('[API] Presigned URL received: $presignedUrl');
+        return presignedUrl;
+      } else {
+        developer.log(
+          '[API] Failed to get presigned URL: ${response.statusCode} - ${response.body}',
+        );
+        return null;
+      }
+    } catch (e) {
+      developer.log('[API] Exception in getPresignedVideoUrl: $e');
+      return null;
+    }
+  }
+
+  /// @deprecated Use [getPresignedVideoUrl] instead.
+  /// Direct streaming URL – only valid if backend still serves /video/:cat/:file.
   static String getVideoUrl(String category, String filename) {
-    final url = '${AppConfig.backendBaseUrl}/video/$category/${Uri.encodeComponent(filename)}';
-    developer.log('[API] Generated video URL: $url');
+    final url =
+        '${AppConfig.backendBaseUrl}/video/$category/${Uri.encodeComponent(filename)}';
+    developer.log('[API] (deprecated) Generated direct video URL: $url');
     return url;
   }
 
   /// Check if a product ID already exists for given measurement type (shaft / housing)
-  static Future<bool> productExists({required String productId, required String measurementType}) async {
+  static Future<bool> productExists({
+    required String productId,
+    required String measurementType,
+  }) async {
     try {
-      final uri = Uri.parse('${AppConfig.backendBaseUrl}/product_exists')
-          .replace(queryParameters: {
-        'product_id': productId,
-        'measurement_type': measurementType,
-      });
-      developer.log('[API] Checking product existence: $productId ($measurementType)');
+      final uri = Uri.parse(
+        '${AppConfig.backendBaseUrl}/product_exists',
+      ).replace(
+        queryParameters: {
+          'product_id': productId,
+          'measurement_type': measurementType,
+        },
+      );
+      developer.log(
+        '[API] Checking product existence: $productId ($measurementType)',
+      );
       final response = await http.get(uri).timeout(_timeout);
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
@@ -187,7 +232,9 @@ class ApiService {
         developer.log('[API] Product existence result: exists=$exists');
         return exists;
       }
-      developer.log('[API] Product existence check failed: ${response.statusCode}');
+      developer.log(
+        '[API] Product existence check failed: ${response.statusCode}',
+      );
       return false; // treat as non-existing on error to allow progress, caller can handle differently
     } catch (e) {
       developer.log('[API] Exception in productExists: $e');
@@ -195,19 +242,42 @@ class ApiService {
     }
   }
 
-  /// Check if a video exists before trying to load it
+  /// Check if a video exists by attempting to fetch its presigned URL.
   static Future<bool> checkVideoExists(String category, String filename) async {
+    final url = await getPresignedVideoUrl(
+      category: category,
+      filename: filename,
+    );
+    final exists = url != null && url.isNotEmpty;
+    developer.log(
+      '[API] Video exists check for $filename in $category: $exists',
+    );
+    return exists;
+  }
+
+  /// Export measurements as CSV for a given roll number.
+  /// [type] is 'shaft' or 'housing'. Returns the presigned S3 URL or null.
+  static Future<String?> exportCsv({
+    required String type,
+    required String rollNumber,
+  }) async {
     try {
-      final response = await http
-          .head(Uri.parse(getVideoUrl(category, filename)))
-          .timeout(const Duration(seconds: 10));
-      
-      final exists = response.statusCode == 200 || response.statusCode == 206;
-      developer.log('[API] Video exists check for $filename in $category: $exists');
-      return exists;
+      final uri = Uri.parse(
+        '${AppConfig.backendBaseUrl}/export/$type/$rollNumber',
+      );
+      developer.log('[API] Requesting CSV export: $uri');
+      final response = await http.get(uri).timeout(_timeout);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final downloadUrl = data['download_url'] as String?;
+        developer.log('[API] CSV export URL: $downloadUrl');
+        return downloadUrl;
+      }
+      developer.log('[API] CSV export failed: ${response.statusCode}');
+      return null;
     } catch (e) {
-      developer.log('[API] Error checking video existence: $e');
-      return false;
+      developer.log('[API] Exception in exportCsv: $e');
+      return null;
     }
   }
 }

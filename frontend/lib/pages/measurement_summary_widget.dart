@@ -1,6 +1,4 @@
-import 'package:bvm_manual_inspection_station/app.dart';
-import 'package:bvm_manual_inspection_station/pages/measurement_step_page.dart';
-import 'package:bvm_manual_inspection_station/pages/housing_types_page.dart';
+import 'package:bvm_manual_inspection_station/pages/submission_result_page.dart';
 import 'package:flutter/material.dart';
 import '../models/measurement_step_model.dart';
 import '../config/app_theme.dart';
@@ -9,23 +7,19 @@ import '../models/user_session.dart';
 
 class MeasurementSummaryWidget extends StatelessWidget {
   final MeasurementStepModel model;
-  
-  const MeasurementSummaryWidget({
-    Key? key, 
-    required this.model
-  }) : super(key: key);
+
+  const MeasurementSummaryWidget({Key? key, required this.model})
+    : super(key: key);
 
   Future<void> _submitMeasurement(BuildContext context) async {
-    // Prepare the measurements map for submission
-    final Map<String, String> measurements = Map<String, String>.from(model.measurements);
-    
-    // Add roll number from session
+    final Map<String, String> measurements = Map<String, String>.from(
+      model.measurements,
+    );
     measurements['roll_number'] = UserSession.rollNumber ?? '';
-    
-    // Determine housing type for housing categories
+
     String? housingType;
     if (model.category != 'shaft') {
-      housingType = model.category; // This will be 'oval', 'sqaure', 'angular', etc.
+      housingType = model.category;
     }
 
     final success = await ApiService.submitMeasurement(
@@ -35,20 +29,12 @@ class MeasurementSummaryWidget extends StatelessWidget {
       housingType: housingType,
     );
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Measurement submitted!'))
-      );
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => _NextActionDialog(),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Submission failed. Please try again.'))
-      );
-    }
+    if (!context.mounted) return;
+
+    // Navigate to the result page (replaces current route so back goes to dashboard)
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => SubmissionResultPage(success: success)),
+    );
   }
 
   @override
@@ -65,49 +51,54 @@ class MeasurementSummaryWidget extends StatelessWidget {
             const Icon(Icons.check_circle, color: AppTheme.success, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Review Your Measurements', 
+              'Review Your Measurements',
               style: TextStyle(
-                fontSize: 20, 
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.textBody,
-              )
+              ),
             ),
             const SizedBox(height: 18),
             SingleChildScrollView(
               child: Column(
-                children: model.steps.map((step) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          step['label'], 
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.textDark,
+                children:
+                    model.steps
+                        .map(
+                          (step) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    step['label'],
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: AppTheme.textDark,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 1,
+                                  child: Text(
+                                    model.measurements[step['field']] ?? '-',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.textBody,
+                                    ),
+                                    textAlign: TextAlign.end,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 1,
-                        child: Text(
-                          model.measurements[step['field']] ?? '-',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textBody,
-                          ),
-                          textAlign: TextAlign.end,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                )).toList(),
+                        )
+                        .toList(),
               ),
             ),
             const SizedBox(height: 28),
@@ -117,7 +108,10 @@ class MeasurementSummaryWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               onPressed: () => _submitMeasurement(context),
             ),
@@ -128,104 +122,20 @@ class MeasurementSummaryWidget extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.secondary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(
+                  context,
+                ).popUntil((route) => route.settings.name == '/dashboard');
               },
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _NextActionDialog extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppTheme.cardBg,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.check_circle, color: AppTheme.success, size: 24),
-              SizedBox(width: 8),
-              Text('Measurement submitted successfully!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.success)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'What would you like to measure next?',
-            style: TextStyle(color: AppTheme.textDark),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Choose a product type or log out.',
-            style: TextStyle(color: AppTheme.textBody),
-          ),
-        ],
-      ),
-      actions: [
-        ElevatedButton.icon(
-          icon: const Icon(Icons.home_work),
-          label: const Text('Measure Housing'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primary,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => HousingTypesPage(),
-              ),
-            );
-          },
-        ),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.settings_input_component),
-          label: const Text('Measure Shaft'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.info,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => MeasurementStepPage(
-                  category: 'shaft',
-                  model: MeasurementStepModel(category: 'shaft'),
-                ),
-              ),
-            );
-          },
-        ),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.logout),
-          label: const Text('Log Out / Check Out'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.error,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-              (route) => false,
-            );
-          },
-        ),
-      ],
     );
   }
 }

@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import '../config/app_config.dart';
 import '../services/api_service.dart';
 import 'dart:developer' as developer;
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'user_session.dart';
 
 class MeasurementStepModel extends ChangeNotifier {
   final String category;
@@ -33,43 +29,9 @@ class MeasurementStepModel extends ChangeNotifier {
   bool get isSummary => _isSummary;
   Map<String, String> get measurements => _measurements;
   Player? get player => _player; // media_kit Player getter
-  VideoController? get videoController => _videoController; // media_kit VideoController getter
+  VideoController? get videoController =>
+      _videoController; // media_kit VideoController getter
   bool get isVideoLoading => _isVideoLoading;
-
-  /// Submit measurements to backend
-  Future<bool> submitMeasurements() async {
-    String endpoint;
-    final body = Map<String, dynamic>.from(measurements);
-    // Always include roll_number if available from session or model
-    final roll = userRoll ?? UserSession.rollNumber;
-    final productIdValue = productId;
-    if (roll != null && roll.isNotEmpty) body['roll_number'] = roll;
-    // Do NOT include 'name' in the payload for measurement submission
-    if (productIdValue != null && productIdValue.isNotEmpty) body['product_id'] = productIdValue;
-    
-    if (category == 'shaft') {
-      endpoint = '/shaft_measurement';
-    } else {
-      endpoint = '/housing_measurement';
-      // For housing measurements, include the housing_type
-      body['housing_type'] = category; // This will be 'oval', 'sqaure', 'angular', etc.
-    }
-    
-    final url = Uri.parse('${AppConfig.backendBaseUrl}$endpoint');
-    developer.log('Submitting measurements: ${jsonEncode(body)}');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-      developer.log('Backend response: ${response.statusCode} ${response.body}');
-      return response.statusCode == 200;
-    } catch (e) {
-      developer.log('Error submitting measurements: $e');
-      return false;
-    }
-  }
 
   List<Map<String, dynamic>> get steps {
     if (category == 'shaft') {
@@ -78,13 +40,15 @@ class MeasurementStepModel extends ChangeNotifier {
           'label': 'Measure the height of the shaft',
           'icon': Icons.height,
           'field': 'shaft_height',
-          'hint': 'To measure the height, extend the depth bar, place the base on one end, and insert the depth bar until it touches the other end. Read the value from the scale.',
+          'hint':
+              'To measure the height, extend the depth bar, place the base on one end, and insert the depth bar until it touches the other end. Read the value from the scale.',
         },
         {
           'label': 'Measure the radius of the shaft',
           'icon': Icons.radio_button_checked,
           'field': 'shaft_radius',
-          'hint': 'To measure the radius, close the jaws around the shaft. Make sure the jaws are aligned and read the measurement from the scale.',
+          'hint':
+              'To measure the radius, close the jaws around the shaft. Make sure the jaws are aligned and read the measurement from the scale.',
         },
       ];
     } else {
@@ -94,13 +58,15 @@ class MeasurementStepModel extends ChangeNotifier {
           'label': 'Measure the height of the housing',
           'icon': Icons.height,
           'field': 'housing_height',
-          'hint': 'To measure the height, extend the depth bar, place the base on one end, and insert the depth bar until it touches the other end. Read the value from the scale.',
+          'hint':
+              'To measure the height, extend the depth bar, place the base on one end, and insert the depth bar until it touches the other end. Read the value from the scale.',
         },
         {
           'label': 'Measure the radius of the housing',
           'icon': Icons.radio_button_checked,
           'field': 'housing_radius',
-          'hint': 'To measure the radius, close the jaws around the housing. Make sure the jaws are aligned and read the measurement from the scale.',
+          'hint':
+              'To measure the radius, close the jaws around the housing. Make sure the jaws are aligned and read the measurement from the scale.',
         },
       ];
     }
@@ -115,120 +81,83 @@ class MeasurementStepModel extends ChangeNotifier {
 
   Future<void> _initializeVideoForStep() async {
     developer.log('=== _initializeVideoForStep called ===');
-    developer.log('Category: $category');
-    developer.log('Current step: $_currentStep');
-    developer.log('Is summary: $_isSummary');
-    
-    _isVideoLoading = true;
-    notifyListeners(); // Notify to show loading indicator
+    developer.log(
+      'Category: $category, Step: $_currentStep, Summary: $_isSummary',
+    );
 
-    // Dispose previous player if it exists
-    developer.log('Disposing previous player');
+    _isVideoLoading = true;
+    notifyListeners();
+
     await _player?.dispose();
     _player = null;
     _videoController = null;
 
-    if (_isSummary) {
-      developer.log('Is summary, no video needed');
-      _isVideoLoading = false; // No video for summary
+    if (_isSummary || _currentStep >= steps.length) {
+      _isVideoLoading = false;
       notifyListeners();
       return;
     }
 
     try {
-      final videoUrl = _getVideoUrlForStep();
-      developer.log('Video URL: $videoUrl');
-      if (videoUrl.isEmpty) {
-        developer.log('Video URL is empty');
-        _isVideoLoading = false;
-        notifyListeners();
-        return;
-      }
-
-      // Check if video exists before trying to load it
       final step = steps[_currentStep];
       String filename = '';
       String videoCategory = '';
-      
+
       if (category == 'shaft') {
         videoCategory = 'shaft';
         if (step['field'] == 'shaft_height') {
-          filename = 'shaft_height.mkv'; // Match actual file in backend
+          filename = 'shaft_height.mkv';
         } else if (step['field'] == 'shaft_radius') {
-          filename = 'shaft_radius.mkv'; // Match actual file in backend
+          filename = 'shaft_radius.mkv';
         }
       } else {
         videoCategory = '${category}_housing';
         if (step['field'] == 'housing_height') {
-          if (category == 'sqaure') {
-            filename = 'square_housing_depth.mkv'; // This file has correct spelling
-          } else {
-            filename = '${category}_housing_depth.mkv'; // For oval and angular
-          }
+          filename =
+              category == 'sqaure'
+                  ? 'square_housing_depth.mkv'
+                  : '${category}_housing_depth.mkv';
         } else if (step['field'] == 'housing_radius') {
-          filename = '${category}_housing_radius.mkv'; // This follows the directory naming
+          filename = '${category}_housing_radius.mkv';
         }
       }
 
-      final videoExists = await ApiService.checkVideoExists(videoCategory, filename);
-      if (!videoExists) {
-        developer.log('Video does not exist: $filename in $videoCategory');
+      if (filename.isEmpty) {
+        developer.log('No filename resolved for step ${step['field']}');
         _isVideoLoading = false;
         notifyListeners();
         return;
       }
 
-      developer.log('Creating media_kit Player');
-      // Initialize media_kit Player
+      // Fetch a fresh presigned URL from the backend /play endpoint
+      final presignedUrl = await ApiService.getPresignedVideoUrl(
+        category: videoCategory,
+        filename: filename,
+      );
+
+      if (presignedUrl == null || presignedUrl.isEmpty) {
+        developer.log(
+          'No presigned URL returned for $filename in $videoCategory',
+        );
+        _isVideoLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      developer.log('Opening player with presigned URL: $presignedUrl');
       _player = Player();
       _videoController = VideoController(_player!);
+      await _player!.open(Media(presignedUrl));
 
-      developer.log('Opening media with URL: $videoUrl');
-      await _player!.open(Media(videoUrl));
-      
       developer.log('Player initialized successfully');
-      _isVideoLoading = false;
-      notifyListeners();
-
     } catch (e, stacktrace) {
-      developer.log('Error setting up media_kit player: $e');
+      developer.log('Error initializing player: $e');
       developer.log('Stacktrace: $stacktrace');
       _player = null;
       _videoController = null;
-      _isVideoLoading = false; // Clear loading state on error
+    } finally {
+      _isVideoLoading = false;
       notifyListeners();
-    }
-  }
-
-  String _getVideoUrlForStep() {
-    if (_currentStep >= steps.length) {
-      return ''; // No video for summary
-    }
-    final step = steps[_currentStep];
-    String filename = '';
-    
-    if (category == 'shaft') {
-      if (step['field'] == 'shaft_height') {
-        filename = 'shaft_height.mkv'; // Match actual file in backend
-      } else if (step['field'] == 'shaft_radius') {
-        filename = 'shaft_radius.mkv'; // Match actual file in backend
-      }
-      return ApiService.getVideoUrl('shaft', filename);
-    } else {
-      // For housing types (oval, sqaure, angular), use the housing type category
-      String videoCategory = '${category}_housing';
-      
-      if (step['field'] == 'housing_height') {
-        if (category == 'sqaure') {
-          filename = 'square_housing_depth.mkv'; // This file has correct spelling
-        } else {
-          filename = '${category}_housing_depth.mkv'; // For oval and angular
-        }
-      } else if (step['field'] == 'housing_radius') {
-        filename = '${category}_housing_radius.mkv'; // This follows the directory naming
-      }
-      
-      return ApiService.getVideoUrl(videoCategory, filename);
     }
   }
 

@@ -10,34 +10,14 @@ class SubmissionResultPage extends StatefulWidget {
   State<SubmissionResultPage> createState() => _SubmissionResultPageState();
 }
 
-class _SubmissionResultPageState extends State<SubmissionResultPage> with TickerProviderStateMixin {
-  late AnimationController _iconController;
-  late AnimationController _contentController;
-  late Animation<double> _iconAnimation;
-  late Animation<double> _contentAnimation;
-
+class _SubmissionResultPageState extends State<SubmissionResultPage> {
   @override
   void initState() {
     super.initState();
-    
-    _iconController = AnimationController(duration: const Duration(milliseconds: 1200), vsync: this);
-    _contentController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
-    
-    _iconAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _iconController, curve: Curves.elasticOut)
-    );
-    _contentAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _contentController, curve: Curves.easeOutBack)
-    );
-    
-    _iconController.forward();
-    Future.delayed(const Duration(milliseconds: 300), () => _contentController.forward());
   }
 
   @override
   void dispose() {
-    _iconController.dispose();
-    _contentController.dispose();
     super.dispose();
   }
 
@@ -47,7 +27,7 @@ class _SubmissionResultPageState extends State<SubmissionResultPage> with Ticker
     final Color cardBg = AppTheme.cardBg;
     final Color accent = widget.success ? AppTheme.success : AppTheme.error;
     final Color textColor = AppTheme.textDark;
-    
+
     return Scaffold(
       backgroundColor: bgColor,
       body: Container(
@@ -103,160 +83,140 @@ class _SubmissionResultPageState extends State<SubmissionResultPage> with Ticker
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Animated icon
-                        AnimatedBuilder(
-                          animation: _iconAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _iconAnimation.value,
-                              child: Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      accent.withOpacity(0.2),
-                                      accent.withOpacity(0.1),
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: accent.withOpacity(0.3),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  widget.success ? Icons.check_circle_rounded : Icons.error_rounded,
-                                  size: 80,
-                                  color: accent,
-                                ),
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                accent.withOpacity(0.2),
+                                accent.withOpacity(0.1),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
                               ),
-                            );
-                          },
+                            ],
+                          ),
+                          child: Icon(
+                            widget.success
+                                ? Icons.check_circle_rounded
+                                : Icons.error_rounded,
+                            size: 80,
+                            color: accent,
+                          ),
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
-                        // Animated content
-                        AnimatedBuilder(
-                          animation: _contentAnimation,
-                          builder: (context, child) {
-                            return Transform.translate(
-                              offset: Offset(0, 20 * (1 - _contentAnimation.value)),
-                              child: Opacity(
-                                opacity: _contentAnimation.value,
-                                child: Column(
+
+                        // Content
+                        Column(
+                          children: [
+                            Text(
+                              widget.success ? 'Success!' : 'Error',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              widget.success
+                                  ? 'Measurements submitted successfully'
+                                  : 'Failed to submit measurements',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                color: textColor.withOpacity(0.8),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.success
+                                  ? 'Your data has been saved to the system'
+                                  : 'Please check your connection and try again',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: textColor.withOpacity(0.6),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // Button
+                        Container(
+                          width: double.infinity,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppTheme.primary,
+                                AppTheme.primary.withOpacity(0.8),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primary.withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: () {
+                                Navigator.of(context).popUntil(
+                                  (route) =>
+                                      route.settings.name == '/dashboard',
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      widget.success ? 'Success!' : 'Error',
-                                      style: TextStyle(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
-                                        color: textColor,
-                                        letterSpacing: 1.2,
-                                      ),
+                                    Icon(
+                                      Icons.dashboard_rounded,
+                                      size: 24,
+                                      color: Colors.white,
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(width: 12),
                                     Text(
-                                      widget.success 
-                                          ? 'Measurements submitted successfully'
-                                          : 'Failed to submit measurements',
-                                      textAlign: TextAlign.center,
+                                      'Back to Dashboard',
                                       style: TextStyle(
                                         fontSize: 18,
-                                        fontWeight: FontWeight.w500,
-                                        color: textColor.withOpacity(0.8),
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
                                         letterSpacing: 0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      widget.success
-                                          ? 'Your data has been saved to the system'
-                                          : 'Please check your connection and try again',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400,
-                                        color: textColor.withOpacity(0.6),
-                                        letterSpacing: 0.3,
-                                      ),
-                                    ),
                                   ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                        
-                        const SizedBox(height: 40),
-                        
-                        // Animated button
-                        AnimatedBuilder(
-                          animation: _contentAnimation,
-                          builder: (context, child) {
-                            return Transform.scale(
-                              scale: _contentAnimation.value,
-                              child: Container(
-                                width: double.infinity,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      AppTheme.primary,
-                                      AppTheme.primary.withOpacity(0.8),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.primary.withOpacity(0.3),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
-                                    onTap: () {
-                                      Navigator.of(context).popUntil((route) => route.isFirst);
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.home_rounded,
-                                            size: 24,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            'Back to Home',
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.white,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ],
                     ),
