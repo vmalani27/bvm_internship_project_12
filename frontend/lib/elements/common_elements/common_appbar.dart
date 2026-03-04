@@ -143,7 +143,7 @@ class _BvmAppBarState extends State<BvmAppBar> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'BVM',
+                        'Inspection Station',
                         style: TextStyle(
                           color: AppTheme.textDark,
                           fontSize: hasTitle ? 22 : 32,
