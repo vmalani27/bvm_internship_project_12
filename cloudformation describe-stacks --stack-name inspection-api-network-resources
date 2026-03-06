@@ -1,0 +1,47 @@
+{
+    "Stacks": [
+        {
+            "StackId": "arn:aws:cloudformation:us-east-1:586177432842:stack/inspection-api-network-resources/7d855c40-1986-11f1-97b6-0ee7c2829cf3",
+            "StackName": "inspection-api-network-resources",
+            "Description": "Network Stack for PCBias Inspection App",
+            "Parameters": [
+                {
+                    "ParameterKey": "ProjectName",
+                    "ParameterValue": "pcbias"
+                }
+            ],
+            "CreationTime": "2026-03-06T18:01:24.826000+00:00",
+            "RollbackConfiguration": {
+                "RollbackTriggers": []
+            },
+            "StackStatus": "CREATE_COMPLETE",
+            "DisableRollback": false,
+            "NotificationARNs": [],
+            "Outputs": [
+                {
+                    "OutputKey": "VpcId",
+                    "OutputValue": "vpc-05a40819ca167248b"
+                },
+                {
+                    "OutputKey": "PublicSubnetB",
+                    "OutputValue": "subnet-0ae97d4bf702078bb"
+                },
+                {
+                    "OutputKey": "PublicSubnetA",
+                    "OutputValue": "subnet-0b17028cefa1e7807"
+                }
+            ],
+            "Tags": [],
+            "EnableTerminationProtection": false,
+            "DriftInformation": {
+                "StackDriftStatus": "NOT_CHECKED"
+            },
+            "LastOperations": [
+                {
+                    "OperationType": "CREATE_STACK",
+                    "OperationId": "cc544e56-f511-49e4-a727-ed75ecd9c8e2"
+                }
+            ]
+        }
+    ]
+}
