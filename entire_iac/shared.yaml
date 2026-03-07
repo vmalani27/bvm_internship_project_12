@@ -74,3 +74,7 @@ Outputs:
 
   VideoBucketName:
     Value: !Ref VideoBucket
+
+  FrontendBucketName:
+    Description: Bucket hosting the Flutter frontend
+    Value: !Ref FrontendBucket

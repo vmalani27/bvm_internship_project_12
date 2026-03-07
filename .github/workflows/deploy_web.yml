@@ -50,6 +50,15 @@ jobs:
             --dart-define=BACKEND_URL=${{ env.BACKEND_URL }}
         working-directory: frontend
 
+      - name: Get frontend bucket name
+        run: |
+          FRONTEND_BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name inspection-api-shared-resources- \
+            --query "Stacks[0].Outputs[?OutputKey=='FrontendBucketName'].OutputValue" \
+            --output text)
+
+          echo "FRONTEND_BUCKET=$FRONTEND_BUCKET" >> $GITHUB_ENV
+
       - name: Sync to S3
         run: |
-          aws s3 sync frontend/build/web s3://${{ secrets.AWS_S3_BUCKET }} --delete
+          aws s3 sync frontend/build/web s3://$FRONTEND_BUCKET --delete
