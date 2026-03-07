@@ -72,7 +72,7 @@ def provision_s3_bucket(bucket_name, region='us-east-1', folder_path=None):
 if __name__ == "__main__":
     bucket_name = "my-iac-docs"  # Ensure this meets S3 naming rules
     region = "us-east-1"
-    folder_path = "./frontend_build"  # Replace with the path to your frontend build folder
+    folder_path = "./entire_iac"  # Replace with the path to your frontend build folder
 
     result = provision_s3_bucket(bucket_name, region, folder_path)
     if result:
@@ -82,3 +82,29 @@ if __name__ == "__main__":
                 print(url)
         else:
             print(f"Provisioned bucket is available at: {result}")
+
+
+
+
+
+
+'''
+aws cloudformation create-stack \
+  --stack-name inspection-api-backend-resources \
+  --template-body file://backend.yaml \
+  --parameters \
+    ParameterKey=VpcId,ParameterValue=$VPC_ID \
+    ParameterKey=PublicSubnetA,ParameterValue=$SUBNET_A \
+    ParameterKey=PublicSubnetB,ParameterValue=$SUBNET_B \
+  --region us-east-1
+  
+  
+
+aws cloudformation deploy   --stack-name inspection-api-shared-resources   --template-file entire_iac/shared.yaml   --region us-east-1
+  
+aws cloudformation deploy   --stack-name inspection-api-network-resources   --template-file entire_iac/network.yaml   --region us-east-1  
+  aws cloudformation create-stack \
+  --stack-name inspection-api-network-resources \
+  --template-body file://shared.yaml \
+  --region us-east-1
+  '''

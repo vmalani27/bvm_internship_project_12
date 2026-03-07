@@ -53,7 +53,7 @@ jobs:
       - name: Get frontend bucket name
         run: |
           FRONTEND_BUCKET=$(aws cloudformation describe-stacks \
-            --stack-name inspection-api-shared-resources- \
+            --stack-name inspection-api-shared-resources \
             --query "Stacks[0].Outputs[?OutputKey=='FrontendBucketName'].OutputValue" \
             --output text)
 
